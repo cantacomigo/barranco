@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency, formatPhone, getWhatsappUrl } from '../../utils/formatters';
 import { triggerThermalPrint } from '../../utils/thermalPrinter';
+import { ConfirmModal } from '../ConfirmModal';
 
 interface AdminOrdersManagerProps {
   orders: Order[];
@@ -35,6 +36,7 @@ export const AdminOrdersManager: React.FC<AdminOrdersManagerProps> = ({
 }) => {
   const [statusFilter, setStatusFilter] = useState<'all' | OrderStatus>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isClearOrdersConfirmOpen, setIsClearOrdersConfirmOpen] = useState(false);
 
   const filteredOrders = orders.filter((o) => {
     const matchStatus = statusFilter === 'all' || o.status === statusFilter;
@@ -160,12 +162,8 @@ export const AdminOrdersManager: React.FC<AdminOrdersManagerProps> = ({
 
         {onClearOrders && orders.length > 0 && (
           <button
-            onClick={() => {
-              if (window.confirm('Deseja limpar todo o histórico de pedidos desta sessão?')) {
-                onClearOrders();
-              }
-            }}
-            className="text-xs text-zinc-500 hover:text-red-400 p-1.5 transition flex items-center gap-1"
+            onClick={() => setIsClearOrdersConfirmOpen(true)}
+            className="text-xs text-zinc-500 hover:text-red-400 p-1.5 transition flex items-center gap-1 cursor-pointer"
             title="Limpar pedidos"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -399,6 +397,21 @@ export const AdminOrdersManager: React.FC<AdminOrdersManagerProps> = ({
           ))}
         </div>
       )}
+
+      {/* Clear Orders Modal */}
+      <ConfirmModal
+        isOpen={isClearOrdersConfirmOpen}
+        title="Limpar Histórico de Pedidos"
+        message="Tem certeza que deseja limpar todos os pedidos registrados nesta sessão? Esta ação não pode ser desfeita."
+        confirmLabel="Sim, Limpar Histórico"
+        cancelLabel="Cancelar"
+        variant="danger"
+        onConfirm={() => {
+          if (onClearOrders) onClearOrders();
+          setIsClearOrdersConfirmOpen(false);
+        }}
+        onClose={() => setIsClearOrdersConfirmOpen(false)}
+      />
     </div>
   );
 };

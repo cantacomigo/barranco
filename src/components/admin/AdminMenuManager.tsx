@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
 import { ProductEditorModal } from './ProductEditorModal';
+import { ConfirmModal } from '../ConfirmModal';
 
 interface AdminMenuManagerProps {
   items: MenuItem[];
@@ -57,7 +58,10 @@ export const AdminMenuManager: React.FC<AdminMenuManagerProps> = ({
   const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'paused'>('all');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<MenuItem | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<MenuItem | null>(null);
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [isMassAdjustOpen, setIsMassAdjustOpen] = useState(false);
+  const [isMassAdjustConfirmOpen, setIsMassAdjustConfirmOpen] = useState(false);
   const [adjustPercent, setAdjustPercent] = useState<number>(5);
 
   const filteredItems = useMemo(() => {
@@ -87,37 +91,36 @@ export const AdminMenuManager: React.FC<AdminMenuManagerProps> = ({
     setIsEditorOpen(true);
   };
 
-  const handleDelete = (item: MenuItem) => {
-    if (window.confirm(`Tem certeza que deseja excluir "${item.name}" do cardápio?`)) {
-      onDeleteItem(item.id);
+  const handleDeleteClick = (item: MenuItem) => {
+    setItemToDelete(item);
+  };
+
+  const handleConfirmDelete = () => {
+    if (itemToDelete) {
+      onDeleteItem(itemToDelete.id);
+      setItemToDelete(null);
     }
   };
 
-  const handleReset = () => {
-    if (
-      window.confirm(
-        'Tem certeza que deseja restaurar o cardápio original completo? Quaisquer alterações locais serão reinicializadas.'
-      )
-    ) {
-      onResetMenu();
-    }
+  const handleResetClick = () => {
+    setIsResetConfirmOpen(true);
   };
 
-  const handleMassAdjust = (e: React.FormEvent) => {
+  const handleConfirmReset = () => {
+    onResetMenu();
+    setIsResetConfirmOpen(false);
+  };
+
+  const handleMassAdjustSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!adjustPercent) return;
-    const catName =
-      selectedCategory === 'todos'
-        ? 'todos os itens do cardápio'
-        : `itens da categoria "${CATEGORIES_LIST.find((c) => c.id === selectedCategory)?.name}"`;
-    if (
-      window.confirm(
-        `Deseja realmente aplicar um reajuste de ${adjustPercent > 0 ? `+${adjustPercent}%` : `${adjustPercent}%`} para ${catName}?`
-      )
-    ) {
-      onApplyMassPriceAdjustment(adjustPercent, selectedCategory === 'todos' ? undefined : selectedCategory);
-      setIsMassAdjustOpen(false);
-    }
+    setIsMassAdjustConfirmOpen(true);
+  };
+
+  const handleConfirmMassAdjust = () => {
+    onApplyMassPriceAdjustment(adjustPercent, selectedCategory === 'todos' ? undefined : selectedCategory);
+    setIsMassAdjustConfirmOpen(false);
+    setIsMassAdjustOpen(false);
   };
 
   const totalAvailable = items.filter((i) => i.available).length;
@@ -152,8 +155,8 @@ export const AdminMenuManager: React.FC<AdminMenuManagerProps> = ({
           </button>
 
           <button
-            onClick={handleReset}
-            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-red-400 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition border border-zinc-700"
+            onClick={handleResetClick}
+            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-red-400 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition border border-zinc-700 cursor-pointer"
             title="Restaurar cardápio original padrão"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -173,7 +176,7 @@ export const AdminMenuManager: React.FC<AdminMenuManagerProps> = ({
       {/* Mass Price Adjustment Banner Form */}
       {isMassAdjustOpen && (
         <form
-          onSubmit={handleMassAdjust}
+          onSubmit={handleMassAdjustSubmit}
           className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl space-y-3 animate-fade-in"
         >
           <div className="flex items-center justify-between">
@@ -382,7 +385,7 @@ export const AdminMenuManager: React.FC<AdminMenuManagerProps> = ({
 
                   {/* Delete button */}
                   <button
-                    onClick={() => handleDelete(item)}
+                    onClick={() => handleDeleteClick(item)}
                     className="p-1.5 rounded-xl bg-zinc-800 hover:bg-red-950/80 text-zinc-400 hover:text-red-400 border border-zinc-700 transition cursor-pointer"
                     title="Excluir produto"
                   >
@@ -408,6 +411,50 @@ export const AdminMenuManager: React.FC<AdminMenuManagerProps> = ({
           }
         }}
         categories={CATEGORIES_LIST}
+      />
+
+      {/* Item Delete Confirm Modal */}
+      <ConfirmModal
+        isOpen={!!itemToDelete}
+        title="Excluir Produto"
+        message={
+          itemToDelete
+            ? `Tem certeza que deseja excluir "${itemToDelete.name}" (${formatCurrency(itemToDelete.price)}) do cardápio? Esta ação não pode ser desfeita.`
+            : ''
+        }
+        confirmLabel="Sim, Excluir Produto"
+        cancelLabel="Cancelar"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onClose={() => setItemToDelete(null)}
+      />
+
+      {/* Reset Menu Confirm Modal */}
+      <ConfirmModal
+        isOpen={isResetConfirmOpen}
+        title="Restaurar Cardápio Padrão"
+        message="Tem certeza que deseja restaurar o cardápio original completo? Quaisquer alterações de itens locais serão reinicializadas para a lista padrão de fábrica."
+        confirmLabel="Sim, Restaurar Padrão"
+        cancelLabel="Cancelar"
+        variant="warning"
+        onConfirm={handleConfirmReset}
+        onClose={() => setIsResetConfirmOpen(false)}
+      />
+
+      {/* Mass Price Adjust Confirm Modal */}
+      <ConfirmModal
+        isOpen={isMassAdjustConfirmOpen}
+        title="Reajuste de Preços"
+        message={`Deseja realmente aplicar um reajuste de ${adjustPercent > 0 ? `+${adjustPercent}%` : `${adjustPercent}%`} para ${
+          selectedCategory === 'todos'
+            ? 'todos os itens do cardápio'
+            : `a categoria "${CATEGORIES_LIST.find((c) => c.id === selectedCategory)?.name}"`
+        }?`}
+        confirmLabel="Confirmar Reajuste"
+        cancelLabel="Cancelar"
+        variant="warning"
+        onConfirm={handleConfirmMassAdjust}
+        onClose={() => setIsMassAdjustConfirmOpen(false)}
       />
     </div>
   );

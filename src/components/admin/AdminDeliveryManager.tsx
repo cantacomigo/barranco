@@ -3,6 +3,7 @@ import { StoreSettings } from '../../types';
 import { NeighborhoodFee } from '../../data/neighborhoods';
 import { Truck, Plus, Trash2, Edit2, DollarSign, Clock, MapPin, Check, Save } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
+import { ConfirmModal } from '../ConfirmModal';
 
 interface AdminDeliveryManagerProps {
   storeSettings: StoreSettings;
@@ -32,6 +33,7 @@ export const AdminDeliveryManager: React.FC<AdminDeliveryManagerProps> = ({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingItem, setEditingItem] = useState<NeighborhoodFee | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [neighborhoodToDelete, setNeighborhoodToDelete] = useState<number | null>(null);
 
   const handleSaveGeneralSettings = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,9 +55,14 @@ export const AdminDeliveryManager: React.FC<AdminDeliveryManagerProps> = ({
   };
 
   const handleDeleteNeighborhood = (index: number) => {
-    if (window.confirm(`Excluir bairro "${neighborhoods[index].name}"?`)) {
-      const updated = neighborhoods.filter((_, i) => i !== index);
+    setNeighborhoodToDelete(index);
+  };
+
+  const handleConfirmDeleteNeighborhood = () => {
+    if (neighborhoodToDelete !== null) {
+      const updated = neighborhoods.filter((_, i) => i !== neighborhoodToDelete);
       onUpdateNeighborhoods(updated);
+      setNeighborhoodToDelete(null);
     }
   };
 

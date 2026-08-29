@@ -40,6 +40,8 @@ interface AdminPanelModalProps {
   onUpdateNeighborhoods: (newNeighborhoods: NeighborhoodFee[]) => void;
   coupons: Coupon[];
   onUpdateCoupons: (newCoupons: Coupon[]) => void;
+  isFirebaseConnected?: boolean;
+  onSyncAllToFirebase?: () => void;
 }
 
 export type AdminTab = 'orders' | 'menu' | 'financial' | 'delivery' | 'coupons' | 'settings';
@@ -63,11 +65,22 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
   neighborhoods,
   onUpdateNeighborhoods,
   coupons,
-  onUpdateCoupons
+  onUpdateCoupons,
+  isFirebaseConnected = true,
+  onSyncAllToFirebase
 }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('orders');
+  const [syncSuccess, setSyncSuccess] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleManualSync = async () => {
+    if (onSyncAllToFirebase) {
+      await onSyncAllToFirebase();
+      setSyncSuccess(true);
+      setTimeout(() => setSyncSuccess(false), 3000);
+    }
+  };
 
   const pendingOrdersCount = orders.filter((o) => o.status === 'recebido' || o.status === 'preparando').length;
 
@@ -84,7 +97,7 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
               <Settings className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="font-black text-base sm:text-lg text-white">
                   Painel de Gestão do Restaurante
                 </h2>
@@ -97,20 +110,45 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                 >
                   {storeSettings.isOpen ? 'Loja Aberta' : 'Loja Fechada'}
                 </span>
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                    isFirebaseConnected
+                      ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                      : 'bg-zinc-800 text-zinc-400'
+                  }`}
+                  title="Conectado ao Firebase Firestore"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>🔥 Firebase Firestore Conectado</span>
+                </span>
               </div>
               <p className="text-xs text-zinc-400">
-                {storeSettings.name} • Gestão completa de cardápio, estoque, pedidos e caixa
+                {storeSettings.name} • Sincronização em tempo real na nuvem
               </p>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="bg-zinc-800 hover:bg-zinc-700 p-2 rounded-xl text-zinc-300 hover:text-white transition cursor-pointer"
-            title="Fechar painel"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onSyncAllToFirebase && (
+              <button
+                type="button"
+                onClick={handleManualSync}
+                className="hidden sm:flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-amber-300 border border-zinc-700 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                title="Sincronizar dados locais com o Firebase Firestore"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>{syncSuccess ? 'Sincronizado!' : 'Forçar Sync'}</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              className="bg-zinc-800 hover:bg-zinc-700 p-2 rounded-xl text-zinc-300 hover:text-white transition cursor-pointer"
+              title="Fechar painel"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Navigation Tabs Bar */}

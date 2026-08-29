@@ -1,0 +1,122 @@
+{
+  "entities": {
+    "StoreSettings": {
+      "title": "StoreSettings",
+      "description": "General restaurant configurations, contact info, open/closed status, and PIX details",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "tagline": { "type": "string" },
+        "phone": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "address": { "type": "string" },
+        "openingHours": { "type": "string" },
+        "isOpen": { "type": "boolean" },
+        "closedMessage": { "type": "string" },
+        "pixKey": { "type": "string" },
+        "pixKeyType": { "type": "string" },
+        "pixReceiverName": { "type": "string" },
+        "pixCity": { "type": "string" },
+        "freeDeliveryAbove": { "type": "number" },
+        "defaultDeliveryFee": { "type": "number" },
+        "autoPrintOrder": { "type": "boolean" },
+        "printSoundAlert": { "type": "boolean" },
+        "printKitchenNotesHighlight": { "type": "boolean" },
+        "printerPaperSize": { "type": "string" }
+      },
+      "required": ["name", "whatsapp", "isOpen", "pixKey"]
+    },
+    "MenuItem": {
+      "title": "MenuItem",
+      "description": "Products and food items available in the digital menu",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "originalPrice": { "type": "number" },
+        "image": { "type": "string" },
+        "badge": { "type": "string" },
+        "available": { "type": "boolean" },
+        "isPopular": { "type": "boolean" },
+        "isVegetarian": { "type": "boolean" },
+        "isSpicy": { "type": "boolean" },
+        "ingredients": { "type": "array", "items": { "type": "string" } },
+        "preparationTimeMinutes": { "type": "number" },
+        "customizable": { "type": "boolean" }
+      },
+      "required": ["id", "name", "category", "price", "available"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer food orders with items, delivery info, and payment details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "customer": { "type": "object" },
+        "items": { "type": "array" },
+        "payment": { "type": "object" },
+        "subtotal": { "type": "number" },
+        "deliveryFee": { "type": "number" },
+        "discount": { "type": "number" },
+        "total": { "type": "number" },
+        "status": { "type": "string" },
+        "estimatedMinutes": { "type": "number" },
+        "whatsappSent": { "type": "boolean" }
+      },
+      "required": ["id", "createdAt", "customer", "items", "payment", "total", "status"]
+    },
+    "NeighborhoodFee": {
+      "title": "NeighborhoodFee",
+      "description": "Delivery zones and fee schedule",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "fee": { "type": "number" },
+        "estimatedMinutes": { "type": "number" }
+      },
+      "required": ["name", "fee", "estimatedMinutes"]
+    },
+    "Coupon": {
+      "title": "Coupon",
+      "description": "Promotional discount codes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "type": { "type": "string" },
+        "value": { "type": "number" },
+        "minOrder": { "type": "number" },
+        "active": { "type": "boolean" },
+        "description": { "type": "string" },
+        "timesUsed": { "type": "number" }
+      },
+      "required": ["id", "code", "type", "value", "active"]
+    }
+  },
+  "firestore": {
+    "settings/general": {
+      "schema": "StoreSettings",
+      "description": "Global store configuration"
+    },
+    "menu/{menuId}": {
+      "schema": "MenuItem",
+      "description": "Menu items collection"
+    },
+    "orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer food orders"
+    },
+    "neighborhoods/{neighborhoodId}": {
+      "schema": "NeighborhoodFee",
+      "description": "Delivery fees and neighborhoods"
+    },
+    "coupons/{couponId}": {
+      "schema": "Coupon",
+      "description": "Coupons collection"
+    }
+  }
+}

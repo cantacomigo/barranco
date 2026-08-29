@@ -1,4 +1,5 @@
 import { MenuItem, FlavorOption, ExtraOption, StoreSettings } from '../types';
+import { BARRANCO_LOGO_URL } from '../assets/logo';
 
 export const COMMON_FLAVORS: FlavorOption[] = [
   {
@@ -1382,13 +1383,14 @@ export const MENU_ITEMS: MenuItem[] = [
 ];
 
 export const INITIAL_STORE_SETTINGS: StoreSettings = {
-  name: 'Sabor & Brasa Lanches',
-  tagline: 'Lanches Artesanais, Porções Turbinadas & Bebidas Geladas',
+  name: 'Barranco Lanches',
+  tagline: 'Hambúrgueres Artesanais, Porções Turbinadas & Lanches Especiais na Brasa',
+  logoUrl: BARRANCO_LOGO_URL,
   phone: '(11) 98765-4321',
   whatsapp: '5511987654321',
-  pixKey: 'financeiro@saborebrasa.com.br',
+  pixKey: 'financeiro@barrancolanches.com.br',
   pixKeyType: 'email' as const,
-  pixReceiverName: 'SABOR E BRASA LANCHES EIRELI',
+  pixReceiverName: 'BARRANCO LANCHES EIRELI',
   pixCity: 'SAO PAULO',
   address: 'Av. Paulista, 1000 - Bela Vista, São Paulo - SP',
   openingHours: 'Terça a Domingo: 18h às 23h45',

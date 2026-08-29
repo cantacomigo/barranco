@@ -121,6 +121,7 @@ export interface Order {
 export interface StoreSettings {
   name: string;
   tagline: string;
+  logoUrl?: string;
   phone: string;
   whatsapp: string; // Format: 5511999999999
   pixKey: string;

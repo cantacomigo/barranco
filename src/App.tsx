@@ -12,6 +12,25 @@ import {
 import { MENU_ITEMS, INITIAL_STORE_SETTINGS } from './data/menu';
 import { NEIGHBORHOODS, VALID_COUPONS, Coupon, NeighborhoodFee } from './data/neighborhoods';
 
+// Firebase Service
+import {
+  subscribeToStoreSettings,
+  saveStoreSettingsToFirebase,
+  subscribeToMenuItems,
+  saveMenuItemToFirebase,
+  deleteMenuItemFromFirebase,
+  bulkSaveMenuItemsToFirebase,
+  subscribeToOrders,
+  saveOrderToFirebase,
+  updateOrderStatusInFirebase,
+  clearOrdersInFirebase,
+  subscribeToNeighborhoods,
+  saveNeighborhoodsToFirebase,
+  subscribeToCoupons,
+  saveCouponsToFirebase,
+  seedInitialFirestoreData
+} from './services/firebaseService';
+
 // Components
 import { Header } from './components/Header';
 import { StoreBanner } from './components/StoreBanner';
@@ -39,12 +58,18 @@ import {
 import { formatCurrency } from './utils/formatters';
 
 export default function App() {
-  // 1. Store Settings (with localStorage persistence)
+  // 1. Store Settings (with localStorage + Firebase synchronization)
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(() => {
     const saved = localStorage.getItem('sabor_brasa_settings');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        return {
+          ...INITIAL_STORE_SETTINGS,
+          ...parsed,
+          logoUrl: parsed.logoUrl || INITIAL_STORE_SETTINGS.logoUrl,
+          name: parsed.name === 'Sabor & Brasa Lanches' || !parsed.name ? 'Barranco Lanches' : parsed.name
+        };
       } catch (e) {
         return INITIAL_STORE_SETTINGS;
       }
@@ -52,7 +77,7 @@ export default function App() {
     return INITIAL_STORE_SETTINGS;
   });
 
-  // 2. Menu Items (with localStorage persistence)
+  // 2. Menu Items (with localStorage + Firebase synchronization)
   const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
     const saved = localStorage.getItem('sabor_brasa_menu_v2');
     if (saved) {
@@ -66,7 +91,7 @@ export default function App() {
     return MENU_ITEMS;
   });
 
-  // 3. Neighborhoods (with localStorage persistence)
+  // 3. Neighborhoods (with localStorage + Firebase synchronization)
   const [neighborhoods, setNeighborhoods] = useState<NeighborhoodFee[]>(() => {
     const saved = localStorage.getItem('sabor_brasa_neighborhoods');
     if (saved) {
@@ -80,7 +105,7 @@ export default function App() {
     return NEIGHBORHOODS;
   });
 
-  // 4. Coupons (with localStorage persistence)
+  // 4. Coupons (with localStorage + Firebase synchronization)
   const [coupons, setCoupons] = useState<Coupon[]>(() => {
     const saved = localStorage.getItem('sabor_brasa_coupons');
     if (saved) {
@@ -107,7 +132,7 @@ export default function App() {
     return [];
   });
 
-  // 6. Orders State (with localStorage persistence)
+  // 6. Orders State (with localStorage + Firebase synchronization)
   const [orders, setOrders] = useState<Order[]>(() => {
     const saved = localStorage.getItem('sabor_brasa_orders');
     if (saved) {
@@ -119,6 +144,9 @@ export default function App() {
     }
     return [];
   });
+
+  // Cloud Connection Status
+  const [isFirebaseConnected, setIsFirebaseConnected] = useState(true);
 
   // UI Navigation & Filters
   const [selectedCategory, setSelectedCategory] = useState<CategoryId>('todos');
@@ -146,7 +174,77 @@ export default function App() {
   // Toast feedback
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Persist to localStorage
+  // ----------------- FIREBASE REAL-TIME SYNC -----------------
+  useEffect(() => {
+    // 1. Initial Firestore cloud check and seed if collection empty
+    seedInitialFirestoreData(storeSettings, menuItems, neighborhoods, coupons);
+
+    // 2. Real-time Store Settings subscription
+    const unsubSettings = subscribeToStoreSettings(
+      (newSettings) => {
+        setStoreSettings({
+          ...INITIAL_STORE_SETTINGS,
+          ...newSettings,
+          logoUrl: newSettings.logoUrl || INITIAL_STORE_SETTINGS.logoUrl,
+          name: newSettings.name === 'Sabor & Brasa Lanches' || !newSettings.name ? 'Barranco Lanches' : newSettings.name
+        });
+        setIsFirebaseConnected(true);
+      },
+      () => setIsFirebaseConnected(false)
+    );
+
+    // 3. Real-time Menu Items subscription
+    const unsubMenu = subscribeToMenuItems(
+      (newMenu) => {
+        if (newMenu && newMenu.length > 0) {
+          setMenuItems(newMenu);
+        }
+        setIsFirebaseConnected(true);
+      },
+      () => setIsFirebaseConnected(false)
+    );
+
+    // 4. Real-time Orders subscription (Live KDS update)
+    const unsubOrders = subscribeToOrders(
+      (newOrders) => {
+        setOrders(newOrders);
+        setIsFirebaseConnected(true);
+      },
+      () => setIsFirebaseConnected(false)
+    );
+
+    // 5. Real-time Neighborhoods subscription
+    const unsubNeighborhoods = subscribeToNeighborhoods(
+      (newNh) => {
+        if (newNh && newNh.length > 0) {
+          setNeighborhoods(newNh);
+        }
+        setIsFirebaseConnected(true);
+      },
+      () => setIsFirebaseConnected(false)
+    );
+
+    // 6. Real-time Coupons subscription
+    const unsubCoupons = subscribeToCoupons(
+      (newCp) => {
+        if (newCp && newCp.length > 0) {
+          setCoupons(newCp);
+        }
+        setIsFirebaseConnected(true);
+      },
+      () => setIsFirebaseConnected(false)
+    );
+
+    return () => {
+      unsubSettings();
+      unsubMenu();
+      unsubOrders();
+      unsubNeighborhoods();
+      unsubCoupons();
+    };
+  }, []);
+
+  // Persist to local backup cache
   useEffect(() => {
     localStorage.setItem('sabor_brasa_settings', JSON.stringify(storeSettings));
   }, [storeSettings]);
@@ -278,11 +376,18 @@ export default function App() {
     setCartItems([]);
   };
 
-  const handleOrderCompleted = (newOrder: Order) => {
-    setOrders([newOrder, ...orders]);
+  // Order Handlers (Local + Firebase)
+  const handleOrderCompleted = async (newOrder: Order) => {
+    setOrders((prev) => [newOrder, ...prev]);
     setActivePrintOrder(newOrder);
     setCartItems([]);
     setAppliedCoupon(null);
+
+    try {
+      await saveOrderToFirebase(newOrder);
+    } catch (err) {
+      console.warn('Firebase order save note:', err);
+    }
   };
 
   const handleOpenReceiptModal = (order: Order) => {
@@ -291,57 +396,143 @@ export default function App() {
     setIsReceiptModalOpen(true);
   };
 
-  const handleUpdateOrderStatus = (orderId: string, status: OrderStatus) => {
+  const handleUpdateOrderStatus = async (orderId: string, status: OrderStatus) => {
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status } : o))
     );
+    try {
+      await updateOrderStatusInFirebase(orderId, status);
+    } catch (err) {
+      console.warn('Firebase update order status error:', err);
+    }
   };
 
-  const handleClearOrders = () => {
+  const handleClearOrders = async () => {
     setOrders([]);
     showToast('Histórico de pedidos resetado.');
+    try {
+      await clearOrdersInFirebase();
+    } catch (err) {
+      console.warn('Firebase clear orders error:', err);
+    }
   };
 
-  // Menu Management Handlers
-  const handleAddItem = (newItem: MenuItem) => {
+  // Store Settings Handler
+  const handleUpdateStoreSettings = async (newSettings: StoreSettings) => {
+    setStoreSettings(newSettings);
+    try {
+      await saveStoreSettingsToFirebase(newSettings);
+    } catch (err) {
+      console.warn('Firebase save settings error:', err);
+    }
+  };
+
+  // Menu Management Handlers (Local + Firebase)
+  const handleAddItem = async (newItem: MenuItem) => {
     setMenuItems((prev) => [newItem, ...prev]);
     showToast(`"${newItem.name}" adicionado com sucesso!`);
+    try {
+      await saveMenuItemToFirebase(newItem);
+    } catch (err) {
+      console.warn('Firebase add item error:', err);
+    }
   };
 
-  const handleUpdateItem = (updatedItem: MenuItem) => {
+  const handleUpdateItem = async (updatedItem: MenuItem) => {
     setMenuItems((prev) =>
       prev.map((it) => (it.id === updatedItem.id ? updatedItem : it))
     );
     showToast(`"${updatedItem.name}" atualizado!`);
+    try {
+      await saveMenuItemToFirebase(updatedItem);
+    } catch (err) {
+      console.warn('Firebase update item error:', err);
+    }
   };
 
-  const handleDeleteItem = (itemId: string) => {
+  const handleDeleteItem = async (itemId: string) => {
     setMenuItems((prev) => prev.filter((it) => it.id !== itemId));
     showToast('Item removido do cardápio.');
+    try {
+      await deleteMenuItemFromFirebase(itemId);
+    } catch (err) {
+      console.warn('Firebase delete item error:', err);
+    }
   };
 
-  const handleToggleItemAvailable = (itemId: string) => {
+  const handleToggleItemAvailable = async (itemId: string) => {
+    const item = menuItems.find((it) => it.id === itemId);
+    if (!item) return;
+    const updated = { ...item, available: !item.available };
     setMenuItems((prev) =>
-      prev.map((it) => (it.id === itemId ? { ...it, available: !it.available } : it))
+      prev.map((it) => (it.id === itemId ? updated : it))
     );
+    try {
+      await saveMenuItemToFirebase(updated);
+    } catch (err) {
+      console.warn('Firebase toggle item error:', err);
+    }
   };
 
-  const handleResetMenu = () => {
+  const handleResetMenu = async () => {
     setMenuItems(MENU_ITEMS);
     showToast('Cardápio restaurado para o padrão original!');
+    try {
+      await bulkSaveMenuItemsToFirebase(MENU_ITEMS);
+    } catch (err) {
+      console.warn('Firebase reset menu error:', err);
+    }
   };
 
-  const handleApplyMassPriceAdjustment = (percentage: number, categoryId?: CategoryId) => {
-    setMenuItems((prev) =>
-      prev.map((it) => {
-        if (categoryId && categoryId !== 'todos' && it.category !== categoryId) {
-          return it;
-        }
-        const newPrice = Math.max(0.5, Math.round(it.price * (1 + percentage / 100) * 10) / 10);
-        return { ...it, price: newPrice };
-      })
-    );
+  const handleApplyMassPriceAdjustment = async (percentage: number, categoryId?: CategoryId) => {
+    const updatedList = menuItems.map((it) => {
+      if (categoryId && categoryId !== 'todos' && it.category !== categoryId) {
+        return it;
+      }
+      const newPrice = Math.max(0.5, Math.round(it.price * (1 + percentage / 100) * 10) / 10);
+      return { ...it, price: newPrice };
+    });
+
+    setMenuItems(updatedList);
     showToast(`Preços ajustados em ${percentage > 0 ? '+' : ''}${percentage}%!`);
+    try {
+      await bulkSaveMenuItemsToFirebase(updatedList);
+    } catch (err) {
+      console.warn('Firebase mass price adjustment error:', err);
+    }
+  };
+
+  // Neighborhoods Handler
+  const handleUpdateNeighborhoods = async (newNeighborhoods: NeighborhoodFee[]) => {
+    setNeighborhoods(newNeighborhoods);
+    try {
+      await saveNeighborhoodsToFirebase(newNeighborhoods);
+    } catch (err) {
+      console.warn('Firebase save neighborhoods error:', err);
+    }
+  };
+
+  // Coupons Handler
+  const handleUpdateCoupons = async (newCoupons: Coupon[]) => {
+    setCoupons(newCoupons);
+    try {
+      await saveCouponsToFirebase(newCoupons);
+    } catch (err) {
+      console.warn('Firebase save coupons error:', err);
+    }
+  };
+
+  // Manual Full Sync to Cloud
+  const handleSyncAllToFirebase = async () => {
+    try {
+      await saveStoreSettingsToFirebase(storeSettings);
+      await bulkSaveMenuItemsToFirebase(menuItems);
+      await saveNeighborhoodsToFirebase(neighborhoods);
+      await saveCouponsToFirebase(coupons);
+      showToast('☁️ Todos os dados sincronizados com o Firebase Firestore!');
+    } catch (err) {
+      showToast('Erro ao sincronizar com o Firebase.');
+    }
   };
 
   // Filtered Menu Items
@@ -423,6 +614,7 @@ export default function App() {
         activeOrdersCount={activeOrdersCount}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
+        isFirebaseConnected={isFirebaseConnected}
       />
 
       {/* Store Closed Warning Banner if !isOpen */}
@@ -619,8 +811,9 @@ export default function App() {
               <p className="mt-1">
                 WhatsApp de Pedidos: <strong>{storeSettings.phone}</strong>
               </p>
-              <p className="text-emerald-400 mt-2 font-semibold">
-                🛵 Entrega rápida com rastreamento e pagamento online
+              <p className="text-emerald-400 mt-2 font-semibold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>🔥 Firebase Firestore em tempo real ativo</span>
               </p>
             </div>
 
@@ -726,7 +919,7 @@ export default function App() {
         isOpen={isAdminOpen}
         onClose={() => setIsAdminOpen(false)}
         storeSettings={storeSettings}
-        onUpdateStoreSettings={setStoreSettings}
+        onUpdateStoreSettings={handleUpdateStoreSettings}
         orders={orders}
         onUpdateOrderStatus={handleUpdateOrderStatus}
         onClearOrders={handleClearOrders}
@@ -739,9 +932,11 @@ export default function App() {
         onResetMenu={handleResetMenu}
         onApplyMassPriceAdjustment={handleApplyMassPriceAdjustment}
         neighborhoods={neighborhoods}
-        onUpdateNeighborhoods={setNeighborhoods}
+        onUpdateNeighborhoods={handleUpdateNeighborhoods}
         coupons={coupons}
-        onUpdateCoupons={setCoupons}
+        onUpdateCoupons={handleUpdateCoupons}
+        isFirebaseConnected={isFirebaseConnected}
+        onSyncAllToFirebase={handleSyncAllToFirebase}
       />
 
       {/* 7. Thermal Receipt 80mm Preview & Manual Print Modal */}
@@ -750,7 +945,7 @@ export default function App() {
         onClose={() => setIsReceiptModalOpen(false)}
         order={orderForReceiptModal}
         storeSettings={storeSettings}
-        onUpdateSettings={setStoreSettings}
+        onUpdateSettings={handleUpdateStoreSettings}
       />
 
       {/* Persistent Thermal Receipt Print Area for browser window.print() */}

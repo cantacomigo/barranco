@@ -2,6 +2,7 @@ import React from 'react';
 import { ShoppingBag, Flame, Search, Clock, Sparkles, ShieldCheck, HelpCircle } from 'lucide-react';
 import { StoreSettings } from '../types';
 import { formatCurrency } from '../utils/formatters';
+import { BARRANCO_LOGO_URL } from '../assets/logo';
 
 interface HeaderProps {
   storeSettings: StoreSettings;
@@ -14,6 +15,7 @@ interface HeaderProps {
   activeOrdersCount: number;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
+  isFirebaseConnected?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -26,20 +28,27 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAdmin,
   activeOrdersCount,
   searchTerm,
-  setSearchTerm
+  setSearchTerm,
+  isFirebaseConnected = true
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-zinc-900/95 backdrop-blur-md border-b border-zinc-800 text-white shadow-xl">
       {/* Top micro bar with status and alerts */}
       <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 px-4 py-1.5 text-xs text-white font-medium flex items-center justify-between">
         <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-3">
             <span className="flex h-2 w-2 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
             </span>
             <span className="font-semibold">Atendimento Aberto</span>
             <span className="hidden sm:inline text-amber-100">| Entrega rápida em 30-45 min</span>
+            {isFirebaseConnected && (
+              <span className="hidden md:inline-flex items-center gap-1 bg-black/25 text-[10px] text-amber-200 px-2 py-0.5 rounded-full font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                <span>Firebase Sync</span>
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-4">
@@ -61,20 +70,25 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="container mx-auto px-4 py-3 sm:py-4">
         <div className="flex items-center justify-between gap-3 sm:gap-6">
           {/* Logo & Brand Name */}
-          <div className="flex items-center gap-3 cursor-pointer select-none">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-amber-500 to-red-600 flex items-center justify-center shadow-lg shadow-orange-950/40 text-white ring-2 ring-amber-400/30">
-              <Flame className="w-6 h-6 sm:w-7 sm:h-7 animate-pulse text-amber-100" />
+          <div className="flex items-center gap-2.5 sm:gap-3.5 cursor-pointer select-none">
+            <div className="relative w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-zinc-900 border border-zinc-700/80 p-0.5 shadow-xl shadow-orange-950/40 flex items-center justify-center overflow-hidden shrink-0 group">
+              <img
+                src={storeSettings.logoUrl || BARRANCO_LOGO_URL}
+                alt={storeSettings.name}
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-300 drop-shadow-md"
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-black text-lg sm:text-2xl tracking-tight text-white flex items-center gap-1.5">
+                <h1 className="font-black text-lg sm:text-2xl tracking-tight text-white flex items-center gap-1.5 leading-none">
                   <span>{storeSettings.name}</span>
                 </h1>
                 <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider hidden sm:inline-block">
                   Aberto
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 hidden sm:block truncate max-w-xs md:max-w-md">
+              <p className="text-xs text-zinc-400 hidden sm:block truncate max-w-xs md:max-w-md mt-0.5">
                 {storeSettings.tagline}
               </p>
             </div>

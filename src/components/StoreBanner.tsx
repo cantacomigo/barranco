@@ -2,6 +2,7 @@ import React from 'react';
 import { StoreSettings } from '../types';
 import { MapPin, Clock, MessageSquare, Truck, ShieldCheck, Sparkles, Tag, ChevronRight } from 'lucide-react';
 import { formatCurrency, getWhatsappUrl } from '../utils/formatters';
+import { BARRANCO_LOGO_URL } from '../assets/logo';
 
 interface StoreBannerProps {
   storeSettings: StoreSettings;
@@ -31,19 +32,28 @@ export const StoreBanner: React.FC<StoreBannerProps> = ({
           
           {/* Main Info */}
           <div className="lg:col-span-8 space-y-4">
-            <div className="inline-flex items-center gap-2 bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold px-3 py-1 rounded-full">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Cardápio Artesanal & Pedidos Rápidos via WhatsApp</span>
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-zinc-950/90 border border-amber-500/30 p-1 shadow-2xl flex items-center justify-center shrink-0">
+                <img
+                  src={storeSettings.logoUrl || BARRANCO_LOGO_URL}
+                  alt={storeSettings.name}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-contain drop-shadow-lg"
+                />
+              </div>
+              <div>
+                <div className="inline-flex items-center gap-2 bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold px-3 py-1 rounded-full mb-1">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Cardápio Oficial & Delivery</span>
+                </div>
+                <h2 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight">
+                  {storeSettings.name}
+                </h2>
+              </div>
             </div>
 
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
-              Os melhores <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">Lanches</span>,{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Porções Turbinadas</span> &{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-500">Bebidas Geladas</span>
-            </h2>
-
             <p className="text-zinc-300 text-sm sm:text-base max-w-2xl leading-relaxed">
-              Feitos com ingredientes nobres, blends selecionados na brasa, molhos autorais exclusivos e entrega quentinha na sua porta. Monte seu pedido e pague online por PIX ou Cartão!
+              Hambúrgueres artesanais suculentos, lanches prensados tradicionais, porções crocantes turbinadas e bebidas bem geladas. Monte seu pedido e receba quentinho no conforto da sua casa!
             </p>
 
             {/* Info Pills */}
