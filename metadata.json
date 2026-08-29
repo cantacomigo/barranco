@@ -1,0 +1,6 @@
+{
+  "name": "Sabor & Brasa - Lanches, Porções & Bebidas",
+  "description": "Cardápio digital e sistema de pedidos online com catálogo de lanches, porções, bebidas, pagamento via PIX/Cartão, envio via WhatsApp e impressão automática em impressora térmica 80mm.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

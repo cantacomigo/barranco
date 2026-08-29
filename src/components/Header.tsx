@@ -1,0 +1,179 @@
+import React from 'react';
+import { ShoppingBag, Flame, Search, Clock, Sparkles, ShieldCheck, HelpCircle } from 'lucide-react';
+import { StoreSettings } from '../types';
+import { formatCurrency } from '../utils/formatters';
+
+interface HeaderProps {
+  storeSettings: StoreSettings;
+  cartCount: number;
+  cartTotal: number;
+  onOpenCart: () => void;
+  onOpenFlavorCatalog: () => void;
+  onOpenTracker: () => void;
+  onOpenAdmin: () => void;
+  activeOrdersCount: number;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({
+  storeSettings,
+  cartCount,
+  cartTotal,
+  onOpenCart,
+  onOpenFlavorCatalog,
+  onOpenTracker,
+  onOpenAdmin,
+  activeOrdersCount,
+  searchTerm,
+  setSearchTerm
+}) => {
+  return (
+    <header className="sticky top-0 z-40 bg-zinc-900/95 backdrop-blur-md border-b border-zinc-800 text-white shadow-xl">
+      {/* Top micro bar with status and alerts */}
+      <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 px-4 py-1.5 text-xs text-white font-medium flex items-center justify-between">
+        <div className="container mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+            </span>
+            <span className="font-semibold">Atendimento Aberto</span>
+            <span className="hidden sm:inline text-amber-100">| Entrega rápida em 30-45 min</span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <span className="hidden md:inline text-amber-100">
+              🛵 Frete Grátis acima de {formatCurrency(storeSettings.freeDeliveryAbove)}
+            </span>
+            <button
+              onClick={onOpenAdmin}
+              className="text-[11px] bg-black/25 hover:bg-black/40 text-white px-2 py-0.5 rounded transition font-mono"
+              title="Painel de controle do restaurante"
+            >
+              ⚙️ Painel da Loja
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Header Container */}
+      <div className="container mx-auto px-4 py-3 sm:py-4">
+        <div className="flex items-center justify-between gap-3 sm:gap-6">
+          {/* Logo & Brand Name */}
+          <div className="flex items-center gap-3 cursor-pointer select-none">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-amber-500 to-red-600 flex items-center justify-center shadow-lg shadow-orange-950/40 text-white ring-2 ring-amber-400/30">
+              <Flame className="w-6 h-6 sm:w-7 sm:h-7 animate-pulse text-amber-100" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="font-black text-lg sm:text-2xl tracking-tight text-white flex items-center gap-1.5">
+                  <span>{storeSettings.name}</span>
+                </h1>
+                <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider hidden sm:inline-block">
+                  Aberto
+                </span>
+              </div>
+              <p className="text-xs text-zinc-400 hidden sm:block truncate max-w-xs md:max-w-md">
+                {storeSettings.tagline}
+              </p>
+            </div>
+          </div>
+
+          {/* Search bar on desktop */}
+          <div className="hidden md:flex flex-1 max-w-md relative">
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Buscar lanches, porções, bebidas, combos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-zinc-800/80 border border-zinc-700/80 rounded-xl pl-10 pr-4 py-2 text-sm text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition shadow-inner"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-white px-1"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Flavor Catalog Button */}
+            <button
+              onClick={onOpenFlavorCatalog}
+              id="btn-sabores-header"
+              className="flex items-center gap-1.5 bg-zinc-800/90 hover:bg-zinc-700/90 text-amber-400 hover:text-amber-300 border border-amber-500/30 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition shadow-sm cursor-pointer whitespace-nowrap"
+            >
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span className="hidden sm:inline">Catálogo de</span> Sabores
+            </button>
+
+            {/* Orders Tracker Button */}
+            <button
+              onClick={onOpenTracker}
+              id="btn-tracker-header"
+              className="relative flex items-center gap-1.5 bg-zinc-800/90 hover:bg-zinc-700/90 text-zinc-200 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border border-zinc-700 transition"
+              title="Acompanhar Meus Pedidos"
+            >
+              <Clock className="w-4 h-4 text-orange-400" />
+              <span className="hidden lg:inline">Pedidos</span>
+              {activeOrdersCount > 0 && (
+                <span className="w-5 h-5 bg-orange-500 text-white font-bold text-xs rounded-full flex items-center justify-center animate-bounce">
+                  {activeOrdersCount}
+                </span>
+              )}
+            </button>
+
+            {/* Cart Button */}
+            <button
+              onClick={onOpenCart}
+              id="btn-cart-header"
+              className="flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-600 hover:to-red-700 text-white font-bold px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl shadow-lg shadow-orange-950/50 hover:shadow-orange-900/60 transition active:scale-95 group cursor-pointer"
+            >
+              <div className="relative">
+                <ShoppingBag className="w-5 h-5 group-hover:rotate-6 transition-transform" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-white text-red-600 font-extrabold text-[11px] w-5 h-5 rounded-full flex items-center justify-center shadow-md">
+                    {cartCount}
+                  </span>
+                )}
+              </div>
+              <div className="text-left leading-tight hidden xs:block">
+                <span className="block text-[10px] text-amber-100 uppercase tracking-wider font-semibold">
+                  Carrinho
+                </span>
+                <span className="text-xs sm:text-sm font-black">
+                  {cartCount === 0 ? 'Vazio' : formatCurrency(cartTotal)}
+                </span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Search input */}
+        <div className="mt-3 md:hidden relative">
+          <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Buscar lanches, porções, bebidas..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-9 pr-8 py-2 text-xs sm:text-sm text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-white"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+};
