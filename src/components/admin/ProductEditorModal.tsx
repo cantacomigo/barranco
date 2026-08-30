@@ -53,7 +53,10 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
     serves: '1 pessoa'
   });
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   useEffect(() => {
+    setErrorMessage(null);
     if (itemToEdit) {
       setFormData({ ...itemToEdit });
     } else {
@@ -81,9 +84,10 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name?.trim() || !formData.price || formData.price <= 0) {
-      alert('Por favor, preencha o nome e um preço válido para o produto.');
+      setErrorMessage('Por favor, preencha o nome e um preço válido para o produto.');
       return;
     }
+
 
     const finalItem: MenuItem = {
       id: formData.id || `item-${Date.now()}`,
@@ -142,7 +146,21 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-5 text-zinc-200">
+          {errorMessage && (
+            <div className="bg-red-500/15 border border-red-500/40 text-red-300 text-xs px-3.5 py-2.5 rounded-xl flex items-center justify-between">
+              <span>{errorMessage}</span>
+              <button
+                type="button"
+                onClick={() => setErrorMessage(null)}
+                className="text-red-400 hover:text-white font-bold ml-2 text-base leading-none"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
             {/* Nome */}
             <div className="md:col-span-2 space-y-1.5">
               <label className="text-xs font-bold text-zinc-300">Nome do Produto *</label>

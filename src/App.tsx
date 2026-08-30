@@ -11,6 +11,7 @@ import {
 } from './types';
 import { MENU_ITEMS, INITIAL_STORE_SETTINGS } from './data/menu';
 import { NEIGHBORHOODS, VALID_COUPONS, Coupon, NeighborhoodFee } from './data/neighborhoods';
+import { BARRANCO_LOGO_URL } from './assets/logo';
 
 // Firebase Service
 import {
@@ -57,6 +58,32 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from './utils/formatters';
 
+const sanitizeLogoUrl = (url?: string): string => {
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    return BARRANCO_LOGO_URL;
+  }
+  if (
+    url.includes('barranco_lanches_logo_') ||
+    url.includes('barranco_logo_sq_') ||
+    url.includes('barranco_logo_transparent_') ||
+    url.includes('/assets/images/') ||
+    url.includes('sabor_brasa') ||
+    url.includes('placeholder')
+  ) {
+    return BARRANCO_LOGO_URL;
+  }
+  return url;
+};
+
+const sanitizeStoreSettings = (data: Partial<StoreSettings>): StoreSettings => {
+  return {
+    ...INITIAL_STORE_SETTINGS,
+    ...data,
+    name: !data.name || data.name === 'Sabor & Brasa Lanches' ? 'Barranco Lanches' : data.name,
+    logoUrl: sanitizeLogoUrl(data.logoUrl)
+  };
+};
+
 export default function App() {
   // 1. Store Settings (with localStorage + Firebase synchronization)
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(() => {
@@ -64,12 +91,7 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        return {
-          ...INITIAL_STORE_SETTINGS,
-          ...parsed,
-          logoUrl: parsed.logoUrl || INITIAL_STORE_SETTINGS.logoUrl,
-          name: parsed.name === 'Sabor & Brasa Lanches' || !parsed.name ? 'Barranco Lanches' : parsed.name
-        };
+        return sanitizeStoreSettings(parsed);
       } catch (e) {
         return INITIAL_STORE_SETTINGS;
       }
@@ -182,12 +204,8 @@ export default function App() {
     // 2. Real-time Store Settings subscription
     const unsubSettings = subscribeToStoreSettings(
       (newSettings) => {
-        setStoreSettings({
-          ...INITIAL_STORE_SETTINGS,
-          ...newSettings,
-          logoUrl: newSettings.logoUrl || INITIAL_STORE_SETTINGS.logoUrl,
-          name: newSettings.name === 'Sabor & Brasa Lanches' || !newSettings.name ? 'Barranco Lanches' : newSettings.name
-        });
+        const sanitized = sanitizeStoreSettings(newSettings);
+        setStoreSettings(sanitized);
         setIsFirebaseConnected(true);
       },
       () => setIsFirebaseConnected(false)
@@ -419,9 +437,10 @@ export default function App() {
 
   // Store Settings Handler
   const handleUpdateStoreSettings = async (newSettings: StoreSettings) => {
-    setStoreSettings(newSettings);
+    const sanitized = sanitizeStoreSettings(newSettings);
+    setStoreSettings(sanitized);
     try {
-      await saveStoreSettingsToFirebase(newSettings);
+      await saveStoreSettingsToFirebase(sanitized);
     } catch (err) {
       console.warn('Firebase save settings error:', err);
     }
@@ -837,8 +856,8 @@ export default function App() {
               <button onClick={() => setIsTrackerOpen(true)} className="hover:text-zinc-300 cursor-pointer">
                 Acompanhar Pedido
               </button>
-              <button onClick={() => setIsAdminOpen(true)} className="hover:text-zinc-300 cursor-pointer font-bold text-amber-400">
-                Painel do Restaurante (Admin)
+              <button onClick={() => setIsAdminOpen(true)} className="hover:text-amber-300 cursor-pointer font-bold text-amber-400 flex items-center gap-1">
+                <span>🔒 Painel do Dono (Acesso Restrito)</span>
               </button>
             </div>
           </div>

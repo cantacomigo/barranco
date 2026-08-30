@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingBag, Flame, Search, Clock, Sparkles, ShieldCheck, HelpCircle } from 'lucide-react';
+import { ShoppingBag, Flame, Search, Clock, Sparkles, ShieldCheck, HelpCircle, Lock } from 'lucide-react';
 import { StoreSettings } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { BARRANCO_LOGO_URL } from '../assets/logo';
@@ -57,10 +57,11 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
             <button
               onClick={onOpenAdmin}
-              className="text-[11px] bg-black/25 hover:bg-black/40 text-white px-2 py-0.5 rounded transition font-mono"
-              title="Painel de controle do restaurante"
+              className="text-[11px] bg-black/35 hover:bg-black/55 text-amber-200 border border-amber-500/30 hover:border-amber-400 px-2.5 py-0.5 rounded-full transition flex items-center gap-1.5 font-medium cursor-pointer shadow-sm"
+              title="Painel de controle do restaurante (Acesso protegido por senha do dono)"
             >
-              ⚙️ Painel da Loja
+              <Lock className="w-3 h-3 text-amber-400" />
+              <span>Painel do Dono</span>
             </button>
           </div>
         </div>
@@ -71,12 +72,15 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center justify-between gap-3 sm:gap-6">
           {/* Logo & Brand Name */}
           <div className="flex items-center gap-2.5 sm:gap-3.5 cursor-pointer select-none">
-            <div className="relative w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-zinc-900 border border-zinc-700/80 p-0.5 shadow-xl shadow-orange-950/40 flex items-center justify-center overflow-hidden shrink-0 group">
+            <div className="relative w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center shrink-0 group">
               <img
                 src={storeSettings.logoUrl || BARRANCO_LOGO_URL}
                 alt={storeSettings.name}
                 referrerPolicy="no-referrer"
-                className="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-300 drop-shadow-md"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = BARRANCO_LOGO_URL;
+                }}
+                className="w-full h-full object-contain filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] transform group-hover:scale-105 transition-transform duration-300"
               />
             </div>
             <div>
@@ -88,11 +92,12 @@ export const Header: React.FC<HeaderProps> = ({
                   Aberto
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 hidden sm:block truncate max-w-xs md:max-w-md mt-0.5">
+              <p className="text-xs text-zinc-400 hidden sm:block truncate max-w-xs md:max-w-md mt-1">
                 {storeSettings.tagline}
               </p>
             </div>
           </div>
+
 
           {/* Search bar on desktop */}
           <div className="hidden md:flex flex-1 max-w-md relative">

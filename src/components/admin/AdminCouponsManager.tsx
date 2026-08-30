@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Coupon } from '../../data/neighborhoods';
 import { Tag, Plus, Trash2, Check, Sparkles } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
+import { ConfirmModal } from '../ConfirmModal';
 
 interface AdminCouponsManagerProps {
   coupons: Coupon[];
@@ -19,6 +20,8 @@ export const AdminCouponsManager: React.FC<AdminCouponsManagerProps> = ({
     minOrder: 30,
     description: ''
   });
+  const [couponToDelete, setCouponToDelete] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleAddCoupon = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +29,7 @@ export const AdminCouponsManager: React.FC<AdminCouponsManagerProps> = ({
 
     const formattedCode = newCoupon.code.trim().toUpperCase().replace(/\s+/g, '');
     if (coupons.some((c) => c.code === formattedCode)) {
-      alert('Já existe um cupom cadastrado com este código!');
+      setErrorMessage('Já existe um cupom cadastrado com este código!');
       return;
     }
 
@@ -39,6 +42,7 @@ export const AdminCouponsManager: React.FC<AdminCouponsManagerProps> = ({
     };
 
     onUpdateCoupons([...coupons, created]);
+    setErrorMessage(null);
     setNewCoupon({
       code: '',
       type: 'percentage',
@@ -48,11 +52,13 @@ export const AdminCouponsManager: React.FC<AdminCouponsManagerProps> = ({
     });
   };
 
-  const handleDeleteCoupon = (code: string) => {
-    if (window.confirm(`Excluir cupom "${code}"?`)) {
-      onUpdateCoupons(coupons.filter((c) => c.code !== code));
+  const handleConfirmDeleteCoupon = () => {
+    if (couponToDelete) {
+      onUpdateCoupons(coupons.filter((c) => c.code !== couponToDelete));
+      setCouponToDelete(null);
     }
   };
+
 
   return (
     <div className="space-y-6">
@@ -66,6 +72,13 @@ export const AdminCouponsManager: React.FC<AdminCouponsManagerProps> = ({
             Crie cupons promocionais em porcentagem ou valor fixo em reais para incentivar vendas
           </p>
         </div>
+
+        {errorMessage && (
+          <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs px-3 py-2 rounded-xl flex items-center justify-between">
+            <span>{errorMessage}</span>
+            <button onClick={() => setErrorMessage(null)} className="text-red-400 hover:text-white font-bold ml-2">×</button>
+          </div>
+        )}
 
         {/* Add Coupon Form */}
         <form
@@ -85,7 +98,10 @@ export const AdminCouponsManager: React.FC<AdminCouponsManagerProps> = ({
                 required
                 placeholder="Ex: PROMO20"
                 value={newCoupon.code}
-                onChange={(e) => setNewCoupon({ ...newCoupon, code: e.target.value })}
+                onChange={(e) => {
+                  setNewCoupon({ ...newCoupon, code: e.target.value });
+                  setErrorMessage(null);
+                }}
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-white font-mono uppercase font-bold focus:outline-none focus:border-amber-500"
               />
             </div>
@@ -179,8 +195,8 @@ export const AdminCouponsManager: React.FC<AdminCouponsManagerProps> = ({
                 </div>
 
                 <button
-                  onClick={() => handleDeleteCoupon(c.code)}
-                  className="p-2 rounded-lg bg-zinc-800 hover:bg-red-950/80 text-zinc-400 hover:text-red-400 border border-zinc-700 transition"
+                  onClick={() => setCouponToDelete(c.code)}
+                  className="p-2 rounded-lg bg-zinc-800 hover:bg-red-950/80 text-zinc-400 hover:text-red-400 border border-zinc-700 transition cursor-pointer"
                   title="Excluir cupom"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -190,6 +206,19 @@ export const AdminCouponsManager: React.FC<AdminCouponsManagerProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Delete Coupon Modal */}
+      <ConfirmModal
+        isOpen={!!couponToDelete}
+        title="Excluir Cupom"
+        message={couponToDelete ? `Tem certeza que deseja excluir o cupom promocional "${couponToDelete}"?` : ''}
+        confirmLabel="Sim, Excluir Cupom"
+        cancelLabel="Cancelar"
+        variant="danger"
+        onConfirm={handleConfirmDeleteCoupon}
+        onClose={() => setCouponToDelete(null)}
+      />
     </div>
   );
 };
+

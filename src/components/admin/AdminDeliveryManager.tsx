@@ -302,6 +302,23 @@ export const AdminDeliveryManager: React.FC<AdminDeliveryManagerProps> = ({
           ))}
         </div>
       </div>
+
+      {/* Neighborhood Delete Confirm Modal */}
+      <ConfirmModal
+        isOpen={neighborhoodToDelete !== null}
+        title="Excluir Bairro"
+        message={
+          neighborhoodToDelete !== null && neighborhoods[neighborhoodToDelete]
+            ? `Tem certeza que deseja remover o bairro "${neighborhoods[neighborhoodToDelete].name}" da lista de taxas de entrega?`
+            : ''
+        }
+        confirmLabel="Sim, Excluir Bairro"
+        cancelLabel="Cancelar"
+        variant="danger"
+        onConfirm={handleConfirmDeleteNeighborhood}
+        onClose={() => setNeighborhoodToDelete(null)}
+      />
     </div>
   );
 };
+

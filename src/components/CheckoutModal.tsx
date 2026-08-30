@@ -102,6 +102,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   // Card processing state
   const [isProcessingCard, setIsProcessingCard] = useState(false);
   const [cardSuccess, setCardSuccess] = useState(false);
+  const [cardErrorMessage, setCardErrorMessage] = useState<string | null>(null);
+
 
   // Final Created Order
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
@@ -214,9 +216,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   const handleProcessCardPayment = () => {
     if (!cardNumber || !cardHolder || !cardExpiry || !cardCvv) {
-      alert('Preencha todos os dados do cartão de crédito.');
+      setCardErrorMessage('Preencha todos os dados do cartão de crédito.');
       return;
     }
+    setCardErrorMessage(null);
 
     setIsProcessingCard(true);
     setTimeout(() => {
@@ -238,6 +241,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       }
     }, 1800);
   };
+
 
   const handleConfirmPixPayment = () => {
     setPixConfirmed(true);
@@ -745,7 +749,21 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     Ambiente protegido por criptografia de ponta a ponta. Valor: <strong>{formatCurrency(total)}</strong>
                   </div>
 
+                  {cardErrorMessage && (
+                    <div className="bg-red-500/15 border border-red-500/40 text-red-300 text-xs p-3 rounded-xl flex items-center justify-between">
+                      <span>{cardErrorMessage}</span>
+                      <button
+                        type="button"
+                        onClick={() => setCardErrorMessage(null)}
+                        className="text-red-400 hover:text-white font-bold ml-2 text-base leading-none"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+
                   {/* Card Visual Graphic */}
+
                   <div className="max-w-sm mx-auto bg-gradient-to-tr from-zinc-900 via-zinc-800 to-amber-950/60 p-5 rounded-2xl border border-zinc-700 shadow-2xl text-white space-y-6">
                     <div className="flex justify-between items-center">
                       <span className="font-mono text-xs uppercase tracking-widest text-amber-400">

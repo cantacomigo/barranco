@@ -1395,6 +1395,7 @@ export const INITIAL_STORE_SETTINGS: StoreSettings = {
   address: 'Av. Paulista, 1000 - Bela Vista, São Paulo - SP',
   openingHours: 'Terça a Domingo: 18h às 23h45',
   isOpen: true,
+  adminPin: '1234',
   minOrderValue: 20.00,
   freeDeliveryAbove: 80.00,
   defaultDeliveryFee: 7.00,

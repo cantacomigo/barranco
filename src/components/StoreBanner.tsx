@@ -32,13 +32,16 @@ export const StoreBanner: React.FC<StoreBannerProps> = ({
           
           {/* Main Info */}
           <div className="lg:col-span-8 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-zinc-950/90 border border-amber-500/30 p-1 shadow-2xl flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center shrink-0">
                 <img
                   src={storeSettings.logoUrl || BARRANCO_LOGO_URL}
                   alt={storeSettings.name}
                   referrerPolicy="no-referrer"
-                  className="w-full h-full object-contain drop-shadow-lg"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = BARRANCO_LOGO_URL;
+                  }}
+                  className="w-full h-full object-contain filter drop-shadow-[0_8px_20px_rgba(0,0,0,0.6)]"
                 />
               </div>
               <div>
@@ -46,11 +49,12 @@ export const StoreBanner: React.FC<StoreBannerProps> = ({
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                   <span>Cardápio Oficial & Delivery</span>
                 </div>
-                <h2 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight">
+                <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
                   {storeSettings.name}
                 </h2>
               </div>
             </div>
+
 
             <p className="text-zinc-300 text-sm sm:text-base max-w-2xl leading-relaxed">
               Hambúrgueres artesanais suculentos, lanches prensados tradicionais, porções crocantes turbinadas e bebidas bem geladas. Monte seu pedido e receba quentinho no conforto da sua casa!
