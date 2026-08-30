@@ -7,9 +7,10 @@ import {
   Order,
   OrderType,
   OrderStatus,
-  StoreSettings
+  StoreSettings,
+  FlavorOption
 } from './types';
-import { MENU_ITEMS, INITIAL_STORE_SETTINGS } from './data/menu';
+import { MENU_ITEMS, INITIAL_STORE_SETTINGS, COMMON_FLAVORS } from './data/menu';
 import { NEIGHBORHOODS, VALID_COUPONS, Coupon, NeighborhoodFee } from './data/neighborhoods';
 import { BARRANCO_LOGO_URL } from './assets/logo';
 
@@ -29,6 +30,8 @@ import {
   saveNeighborhoodsToFirebase,
   subscribeToCoupons,
   saveCouponsToFirebase,
+  subscribeToFlavors,
+  saveFlavorsToFirebase,
   seedInitialFirestoreData
 } from './services/firebaseService';
 
@@ -141,7 +144,21 @@ export default function App() {
     return VALID_COUPONS;
   });
 
-  // 5. Cart State (with localStorage persistence)
+  // 5. Flavors & Sauces (with localStorage + Firebase synchronization)
+  const [flavors, setFlavors] = useState<FlavorOption[]>(() => {
+    const saved = localStorage.getItem('sabor_brasa_flavors');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {
+        return COMMON_FLAVORS;
+      }
+    }
+    return COMMON_FLAVORS;
+  });
+
+  // 6. Cart State (with localStorage persistence)
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem('sabor_brasa_cart');
     if (saved) {
@@ -154,7 +171,7 @@ export default function App() {
     return [];
   });
 
-  // 6. Orders State (with localStorage + Firebase synchronization)
+  // 7. Orders State (with localStorage + Firebase synchronization)
   const [orders, setOrders] = useState<Order[]>(() => {
     const saved = localStorage.getItem('sabor_brasa_orders');
     if (saved) {
@@ -199,7 +216,7 @@ export default function App() {
   // ----------------- FIREBASE REAL-TIME SYNC -----------------
   useEffect(() => {
     // 1. Initial Firestore cloud check and seed if collection empty
-    seedInitialFirestoreData(storeSettings, menuItems, neighborhoods, coupons);
+    seedInitialFirestoreData(storeSettings, menuItems, neighborhoods, coupons, flavors);
 
     // 2. Real-time Store Settings subscription
     const unsubSettings = subscribeToStoreSettings(
@@ -253,12 +270,24 @@ export default function App() {
       () => setIsFirebaseConnected(false)
     );
 
+    // 7. Real-time Flavors & Sauces subscription
+    const unsubFlavors = subscribeToFlavors(
+      (newFlavors) => {
+        if (newFlavors && newFlavors.length > 0) {
+          setFlavors(newFlavors);
+        }
+        setIsFirebaseConnected(true);
+      },
+      () => setIsFirebaseConnected(false)
+    );
+
     return () => {
       unsubSettings();
       unsubMenu();
       unsubOrders();
       unsubNeighborhoods();
       unsubCoupons();
+      unsubFlavors();
     };
   }, []);
 
@@ -278,6 +307,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('sabor_brasa_coupons', JSON.stringify(coupons));
   }, [coupons]);
+
+  useEffect(() => {
+    localStorage.setItem('sabor_brasa_flavors', JSON.stringify(flavors));
+  }, [flavors]);
 
   useEffect(() => {
     localStorage.setItem('sabor_brasa_cart', JSON.stringify(cartItems));
@@ -541,6 +574,16 @@ export default function App() {
     }
   };
 
+  // Flavors & Sauces Handler
+  const handleUpdateFlavors = async (newFlavors: FlavorOption[]) => {
+    setFlavors(newFlavors);
+    try {
+      await saveFlavorsToFirebase(newFlavors);
+    } catch (err) {
+      console.warn('Firebase save flavors error:', err);
+    }
+  };
+
   // Manual Full Sync to Cloud
   const handleSyncAllToFirebase = async () => {
     try {
@@ -548,6 +591,7 @@ export default function App() {
       await bulkSaveMenuItemsToFirebase(menuItems);
       await saveNeighborhoodsToFirebase(neighborhoods);
       await saveCouponsToFirebase(coupons);
+      await saveFlavorsToFirebase(flavors);
       showToast('☁️ Todos os dados sincronizados com o Firebase Firestore!');
     } catch (err) {
       showToast('Erro ao sincronizar com o Firebase.');
@@ -871,6 +915,7 @@ export default function App() {
         item={selectedProductForModal}
         onClose={() => setSelectedProductForModal(null)}
         onAddToCart={handleAddToCart}
+        globalFlavors={flavors}
       />
 
       {/* 2. Cart Slide Drawer */}
@@ -922,6 +967,8 @@ export default function App() {
       <FlavorCatalogModal
         isOpen={isFlavorCatalogOpen}
         onClose={() => setIsFlavorCatalogOpen(false)}
+        flavors={flavors}
+        onOpenAdminSauces={() => setIsAdminOpen(true)}
       />
 
       {/* 5. Order Tracker Timeline Modal */}
@@ -954,6 +1001,8 @@ export default function App() {
         onUpdateNeighborhoods={handleUpdateNeighborhoods}
         coupons={coupons}
         onUpdateCoupons={handleUpdateCoupons}
+        flavors={flavors}
+        onUpdateFlavors={handleUpdateFlavors}
         isFirebaseConnected={isFirebaseConnected}
         onSyncAllToFirebase={handleSyncAllToFirebase}
       />

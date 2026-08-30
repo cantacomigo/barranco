@@ -7,14 +7,21 @@ interface ProductModalProps {
   item: MenuItem | null;
   onClose: () => void;
   onAddToCart: (item: MenuItem, quantity: number, options: SelectedItemOption) => void;
+  globalFlavors?: FlavorOption[];
 }
 
 export const ProductModal: React.FC<ProductModalProps> = ({
   item,
   onClose,
-  onAddToCart
+  onAddToCart,
+  globalFlavors
 }) => {
   if (!item) return null;
+
+  const currentFlavors =
+    item.flavorsAvailable && item.flavorsAvailable.length > 0
+      ? (globalFlavors && globalFlavors.length > 0 ? globalFlavors : item.flavorsAvailable)
+      : [];
 
   const [quantity, setQuantity] = useState(1);
   const [selectedDoneness, setSelectedDoneness] = useState<string>(
@@ -33,15 +40,15 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     setQuantity(1);
     setSelectedDoneness(item.allowedDoneness ? 'Ao Ponto (Mais Suculento)' : '');
     setSelectedFlavors(
-      item.flavorsAvailable && item.flavorsAvailable.length > 0
-        ? [item.flavorsAvailable[0].name]
+      currentFlavors && currentFlavors.length > 0
+        ? [currentFlavors[0].name]
         : []
     );
     setSelectedExtras([]);
     setSelectedExclusions([]);
     setSelectedSize(item.sizes && item.sizes.length > 0 ? item.sizes[0].name : '');
     setNotes('');
-  }, [item]);
+  }, [item, globalFlavors]);
 
   // Calculate Unit Price based on sizes & extras
   let basePrice = item.price;
@@ -231,7 +238,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           )}
 
           {/* Molhos e Sabores Inclusos para Escolha */}
-          {item.flavorsAvailable && item.flavorsAvailable.length > 0 && (
+          {currentFlavors && currentFlavors.length > 0 && (
             <div className="pt-4 space-y-2.5">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-bold text-white flex items-center gap-2">
@@ -244,7 +251,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {item.flavorsAvailable.map((flavor) => {
+                {currentFlavors.map((flavor) => {
                   const isSelected = selectedFlavors.includes(flavor.name);
                   return (
                     <button

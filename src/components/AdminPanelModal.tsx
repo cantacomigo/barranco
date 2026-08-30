@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StoreSettings, Order, OrderStatus, MenuItem, CategoryId } from '../types';
+import { StoreSettings, Order, OrderStatus, MenuItem, CategoryId, FlavorOption } from '../types';
 import { NeighborhoodFee, Coupon } from '../data/neighborhoods';
 import {
   X,
@@ -21,10 +21,12 @@ import {
   LogOut,
   ArrowRight,
   Delete,
-  AlertCircle
+  AlertCircle,
+  ChefHat
 } from 'lucide-react';
 import { AdminOrdersManager } from './admin/AdminOrdersManager';
 import { AdminMenuManager } from './admin/AdminMenuManager';
+import { AdminSaucesManager } from './admin/AdminSaucesManager';
 import { AdminFinancialDashboard } from './admin/AdminFinancialDashboard';
 import { AdminDeliveryManager } from './admin/AdminDeliveryManager';
 import { AdminCouponsManager } from './admin/AdminCouponsManager';
@@ -47,6 +49,8 @@ interface AdminPanelModalProps {
   onToggleItemAvailable: (itemId: string) => void;
   onResetMenu: () => void;
   onApplyMassPriceAdjustment: (percentage: number, categoryId?: CategoryId) => void;
+  flavors: FlavorOption[];
+  onUpdateFlavors: (newFlavors: FlavorOption[]) => void;
   neighborhoods: NeighborhoodFee[];
   onUpdateNeighborhoods: (newNeighborhoods: NeighborhoodFee[]) => void;
   coupons: Coupon[];
@@ -55,7 +59,7 @@ interface AdminPanelModalProps {
   onSyncAllToFirebase?: () => void;
 }
 
-export type AdminTab = 'orders' | 'menu' | 'financial' | 'delivery' | 'coupons' | 'settings';
+export type AdminTab = 'orders' | 'menu' | 'sauces' | 'financial' | 'delivery' | 'coupons' | 'settings';
 
 export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
   isOpen,
@@ -73,6 +77,8 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
   onToggleItemAvailable,
   onResetMenu,
   onApplyMassPriceAdjustment,
+  flavors,
+  onUpdateFlavors,
   neighborhoods,
   onUpdateNeighborhoods,
   coupons,
@@ -437,7 +443,20 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
             <span>Cardápio & Estoque ({menuItems.length})</span>
           </button>
 
-          {/* Tab 3: Relatórios / Financeiro */}
+          {/* Tab 3: Molhos & Sabores */}
+          <button
+            onClick={() => setActiveTab('sauces')}
+            className={`py-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'sauces'
+                ? 'border-amber-500 text-amber-400 bg-amber-500/5'
+                : 'border-transparent text-zinc-400 hover:text-white'
+            }`}
+          >
+            <ChefHat className="w-4 h-4" />
+            <span>Molhos & Sabores ({flavors?.length || 0})</span>
+          </button>
+
+          {/* Tab 4: Relatórios / Financeiro */}
           <button
             onClick={() => setActiveTab('financial')}
             className={`py-2.5 px-3 text-xs sm:text-sm font-bold border-b-2 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
@@ -511,6 +530,13 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
               onToggleItemAvailable={onToggleItemAvailable}
               onResetMenu={onResetMenu}
               onApplyMassPriceAdjustment={onApplyMassPriceAdjustment}
+            />
+          )}
+
+          {activeTab === 'sauces' && (
+            <AdminSaucesManager
+              flavors={flavors}
+              onUpdateFlavors={onUpdateFlavors}
             />
           )}
 

@@ -1,27 +1,42 @@
 import React, { useState } from 'react';
 import { COMMON_FLAVORS } from '../data/menu';
 import { FlavorOption } from '../types';
-import { X, Sparkles, Flame, Droplet, ChefHat, Check, Search } from 'lucide-react';
+import { X, Sparkles, Flame, Droplet, ChefHat, Check, Search, Lock, Edit3 } from 'lucide-react';
 
 interface FlavorCatalogModalProps {
   isOpen: boolean;
   onClose: () => void;
+  flavors?: FlavorOption[];
+  onOpenAdminSauces?: () => void;
 }
 
-export const FlavorCatalogModal: React.FC<FlavorCatalogModalProps> = ({ isOpen, onClose }) => {
+export const FlavorCatalogModal: React.FC<FlavorCatalogModalProps> = ({
+  isOpen,
+  onClose,
+  flavors = COMMON_FLAVORS,
+  onOpenAdminSauces
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTag, setFilterTag] = useState<string>('all');
 
   if (!isOpen) return null;
 
-  const filteredFlavors = COMMON_FLAVORS.filter((flavor) => {
+  const currentFlavors = flavors && flavors.length > 0 ? flavors : COMMON_FLAVORS;
+
+  const filteredFlavors = currentFlavors.filter((flavor) => {
     const matchesSearch =
       flavor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      flavor.description.toLowerCase().includes(searchTerm.toLowerCase());
+      flavor.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (flavor.tag && flavor.tag.toLowerCase().includes(searchTerm.toLowerCase()));
 
     if (filterTag === 'all') return matchesSearch;
     if (filterTag === 'picante') return matchesSearch && (flavor.spiceLevel || 0) > 0;
-    if (filterTag === 'cremoso') return matchesSearch && flavor.description.toLowerCase().includes('crem');
+    if (filterTag === 'cremoso')
+      return (
+        matchesSearch &&
+        (flavor.description.toLowerCase().includes('crem') ||
+          (flavor.tag && flavor.tag.toLowerCase().includes('crem')))
+      );
     return matchesSearch;
   });
 
@@ -32,7 +47,7 @@ export const FlavorCatalogModal: React.FC<FlavorCatalogModalProps> = ({ isOpen, 
         <Flame className="w-3 h-3 text-red-400" />
         {level === 1 && 'Levemente Picante'}
         {level === 2 && 'Picante Moderado'}
-        {level === 3 && 'Super Picante'}
+        {level === 3 && 'Super Picante 🔥'}
       </span>
     );
   };
@@ -60,12 +75,29 @@ export const FlavorCatalogModal: React.FC<FlavorCatalogModalProps> = ({ isOpen, 
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="bg-zinc-800 hover:bg-zinc-700 p-2 rounded-xl text-zinc-300 hover:text-white transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onOpenAdminSauces && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenAdminSauces();
+                }}
+                className="hidden sm:flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                title="Abrir painel administrativo para cadastrar, editar ou excluir molhos"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Gerenciar Molhos</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              className="bg-zinc-800 hover:bg-zinc-700 p-2 rounded-xl text-zinc-300 hover:text-white transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Filters & Search */}
@@ -84,17 +116,17 @@ export const FlavorCatalogModal: React.FC<FlavorCatalogModalProps> = ({ isOpen, 
           <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto text-xs">
             <button
               onClick={() => setFilterTag('all')}
-              className={`px-3 py-1.5 rounded-lg border transition ${
+              className={`px-3 py-1.5 rounded-lg border transition cursor-pointer ${
                 filterTag === 'all'
                   ? 'bg-amber-500 text-zinc-950 font-bold border-amber-500'
                   : 'bg-zinc-800 border-zinc-700 text-zinc-300'
               }`}
             >
-              Todos ({COMMON_FLAVORS.length})
+              Todos ({currentFlavors.length})
             </button>
             <button
               onClick={() => setFilterTag('picante')}
-              className={`px-3 py-1.5 rounded-lg border transition ${
+              className={`px-3 py-1.5 rounded-lg border transition cursor-pointer ${
                 filterTag === 'picante'
                   ? 'bg-red-500 text-white font-bold border-red-500'
                   : 'bg-zinc-800 border-zinc-700 text-zinc-300'
@@ -104,7 +136,7 @@ export const FlavorCatalogModal: React.FC<FlavorCatalogModalProps> = ({ isOpen, 
             </button>
             <button
               onClick={() => setFilterTag('cremoso')}
-              className={`px-3 py-1.5 rounded-lg border transition ${
+              className={`px-3 py-1.5 rounded-lg border transition cursor-pointer ${
                 filterTag === 'cremoso'
                   ? 'bg-amber-500 text-zinc-950 font-bold border-amber-500'
                   : 'bg-zinc-800 border-zinc-700 text-zinc-300'
@@ -117,54 +149,77 @@ export const FlavorCatalogModal: React.FC<FlavorCatalogModalProps> = ({ isOpen, 
 
         {/* Flavors Grid */}
         <div className="p-4 sm:p-6 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {filteredFlavors.map((flavor, index) => (
-            <div
-              key={flavor.id}
-              className="bg-zinc-800/80 border border-zinc-700/80 hover:border-amber-500/60 rounded-2xl p-4 transition-all duration-200 flex flex-col justify-between space-y-3 shadow-md"
-            >
-              <div className="space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-bold text-base text-white flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-300 text-xs flex items-center justify-center font-mono font-bold">
-                      0{index + 1}
-                    </span>
-                    <span>{flavor.name}</span>
-                  </h3>
-                  {flavor.tag && (
-                    <span className="bg-zinc-700/80 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase">
-                      {flavor.tag}
-                    </span>
-                  )}
-                </div>
-
-                <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
-                  {flavor.description}
-                </p>
-              </div>
-
-              <div className="pt-2 border-t border-zinc-700/50 flex items-center justify-between text-xs text-zinc-400">
-                <div className="flex items-center gap-2">
-                  {getSpiceBadge(flavor.spiceLevel)}
-                  {!flavor.spiceLevel && (
-                    <span className="text-[11px] text-zinc-400 flex items-center gap-1">
-                      <Droplet className="w-3 h-3 text-sky-400" /> Suave & Equilibrado
-                    </span>
-                  )}
-                </div>
-
-                <span className="text-[11px] text-amber-400/90 font-medium">
-                  Incluso nos Lanches & Porções
-                </span>
-              </div>
+          {filteredFlavors.length === 0 ? (
+            <div className="col-span-full p-8 text-center bg-zinc-800/40 rounded-2xl border border-zinc-700 text-zinc-400 space-y-2">
+              <ChefHat className="w-8 h-8 mx-auto text-zinc-500" />
+              <p className="text-sm font-bold text-white">Nenhum molho encontrado nesta busca</p>
             </div>
-          ))}
+          ) : (
+            filteredFlavors.map((flavor, index) => (
+              <div
+                key={flavor.id}
+                className="bg-zinc-800/80 border border-zinc-700/80 hover:border-amber-500/60 rounded-2xl p-4 transition-all duration-200 flex flex-col justify-between space-y-3 shadow-md"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-bold text-base text-white flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-300 text-xs flex items-center justify-center font-mono font-bold">
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+                      <span>{flavor.name}</span>
+                    </h3>
+                    {flavor.tag && (
+                      <span className="bg-zinc-700/80 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase">
+                        {flavor.tag}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
+                    {flavor.description}
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-zinc-700/50 flex items-center justify-between text-xs text-zinc-400">
+                  <div className="flex items-center gap-2">
+                    {getSpiceBadge(flavor.spiceLevel)}
+                    {!flavor.spiceLevel && (
+                      <span className="text-[11px] text-zinc-400 flex items-center gap-1">
+                        <Droplet className="w-3 h-3 text-sky-400" /> Suave & Equilibrado
+                      </span>
+                    )}
+                  </div>
+
+                  <span className="text-[11px] text-amber-400/90 font-medium">
+                    Incluso nos Lanches & Porções
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         {/* Footer info note */}
-        <div className="p-4 bg-zinc-950 border-t border-zinc-800 text-center text-xs text-zinc-400 shrink-0">
-          💡 <em>Dica:</em> Você pode selecionar seus molhos preferidos gratuitamente ao personalizar qualquer lanche ou porção no cardápio!
+        <div className="p-4 bg-zinc-950 border-t border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-zinc-400 shrink-0">
+          <div>
+            💡 <em>Dica:</em> Você pode selecionar seus molhos preferidos gratuitamente ao personalizar qualquer lanche ou porção no cardápio!
+          </div>
+          {onOpenAdminSauces && (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenAdminSauces();
+              }}
+              className="sm:hidden text-amber-400 font-bold hover:underline flex items-center gap-1"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>Gerenciar / Excluir Molhos</span>
+            </button>
+          )}
         </div>
       </div>
     </div>
   );
 };
+

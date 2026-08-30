@@ -11,7 +11,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { StoreSettings, MenuItem, Order, OrderStatus } from '../types';
+import { StoreSettings, MenuItem, Order, OrderStatus, FlavorOption } from '../types';
 import { NeighborhoodFee, Coupon } from '../data/neighborhoods';
 
 // =================== STORE SETTINGS ===================
@@ -253,13 +253,49 @@ export async function saveCouponsToFirebase(coupons: Coupon[]) {
   }
 }
 
+// =================== FLAVORS & SAUCES ===================
+
+export function subscribeToFlavors(
+  onUpdate: (flavors: FlavorOption[]) => void,
+  onError?: (err: Error) => void
+) {
+  const docRef = doc(db, 'flavors', 'list');
+  return onSnapshot(
+    docRef,
+    (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data && Array.isArray(data.items)) {
+          onUpdate(data.items);
+        }
+      }
+    },
+    (error) => {
+      console.warn('Firebase flavors subscription error:', error);
+      if (onError) onError(error);
+    }
+  );
+}
+
+export async function saveFlavorsToFirebase(flavors: FlavorOption[]) {
+  try {
+    const docRef = doc(db, 'flavors', 'list');
+    await setDoc(docRef, { items: flavors });
+    return true;
+  } catch (err) {
+    console.error('Error saving flavors to Firebase:', err);
+    throw err;
+  }
+}
+
 // =================== SEED / INITIAL CLOUD SYNC ===================
 
 export async function seedInitialFirestoreData(
   defaultSettings: StoreSettings,
   defaultMenu: MenuItem[],
   defaultNeighborhoods: NeighborhoodFee[],
-  defaultCoupons: Coupon[]
+  defaultCoupons: Coupon[],
+  defaultFlavors?: FlavorOption[]
 ) {
   try {
     // 1. Settings
@@ -284,6 +320,14 @@ export async function seedInitialFirestoreData(
     const cpDoc = await getDoc(doc(db, 'coupons', 'list'));
     if (!cpDoc.exists()) {
       await setDoc(doc(db, 'coupons', 'list'), { items: defaultCoupons });
+    }
+
+    // 5. Flavors / House Sauces
+    if (defaultFlavors && defaultFlavors.length > 0) {
+      const flDoc = await getDoc(doc(db, 'flavors', 'list'));
+      if (!flDoc.exists()) {
+        await setDoc(doc(db, 'flavors', 'list'), { items: defaultFlavors });
+      }
     }
   } catch (err) {
     console.warn('Initial Firestore seed note:', err);
