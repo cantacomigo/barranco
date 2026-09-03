@@ -188,7 +188,7 @@ export default function App() {
   const [isFirebaseConnected, setIsFirebaseConnected] = useState(true);
 
   // UI Navigation & Filters
-  const [selectedCategory, setSelectedCategory] = useState<CategoryId>('todos');
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId>('hamburguer');
   const [activeQuickFilter, setActiveQuickFilter] = useState<'all' | 'popular' | 'promos' | 'veggie'>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -598,9 +598,9 @@ export default function App() {
     }
   };
 
-  // Filtered Menu Items
+  // Filtered Menu Items (with Hamburguer shown first in the menu)
   const filteredItems = useMemo(() => {
-    return menuItems.filter((item) => {
+    const list = menuItems.filter((item) => {
       // Category filter
       if (selectedCategory !== 'todos' && item.category !== selectedCategory) {
         return false;
@@ -624,12 +624,37 @@ export default function App() {
 
       return true;
     });
+
+    // When viewing "Todos os Itens", ensure Hambúrguer category appears first
+    if (selectedCategory === 'todos' && !searchTerm.trim()) {
+      const CATEGORY_PRIORITY: Record<string, number> = {
+        hamburguer: 1,
+        hamburguer_caseiro: 2,
+        frango: 3,
+        calabresa: 4,
+        lombo: 5,
+        file: 6,
+        hot_dog: 7,
+        diversos: 8,
+        porcoes: 9,
+        bebidas: 10,
+        sobremesas: 11,
+        combos: 12
+      };
+
+      return [...list].sort((a, b) => {
+        const priorityA = CATEGORY_PRIORITY[a.category] ?? 50;
+        const priorityB = CATEGORY_PRIORITY[b.category] ?? 50;
+        return priorityA - priorityB;
+      });
+    }
+
+    return list;
   }, [menuItems, selectedCategory, activeQuickFilter, searchTerm]);
 
   // Counts per category
   const categoryCounts = useMemo(() => {
     const counts: Record<CategoryId, number> = {
-      todos: menuItems.length,
       hamburguer: 0,
       hamburguer_caseiro: 0,
       frango: 0,
@@ -641,7 +666,8 @@ export default function App() {
       porcoes: 0,
       bebidas: 0,
       sobremesas: 0,
-      combos: 0
+      combos: 0,
+      todos: menuItems.length
     };
     menuItems.forEach((item) => {
       if (counts[item.category] !== undefined) {
@@ -735,8 +761,6 @@ export default function App() {
             <h2 className="font-extrabold text-lg sm:text-2xl text-white tracking-tight">
               {searchTerm
                 ? `Resultados para "${searchTerm}"`
-                : selectedCategory === 'todos'
-                ? 'Cardápio Completo na Brasa'
                 : selectedCategory === 'hamburguer'
                 ? 'Hambúrgueres Tradicionais'
                 : selectedCategory === 'hamburguer_caseiro'
@@ -759,7 +783,9 @@ export default function App() {
                 ? 'Bebidas & Sucos Gelados'
                 : selectedCategory === 'sobremesas'
                 ? 'Sobremesas Especiais'
-                : 'Combos & Ofertas Especiais'}
+                : selectedCategory === 'combos'
+                ? 'Combos & Ofertas Especiais'
+                : 'Cardápio Completo na Brasa'}
             </h2>
             <span className="text-xs bg-zinc-800 text-zinc-400 font-mono px-2.5 py-0.5 rounded-full">
               {filteredItems.length} opções

@@ -29,7 +29,6 @@ interface AdminMenuManagerProps {
 }
 
 export const CATEGORIES_LIST: { id: CategoryId; name: string }[] = [
-  { id: 'todos', name: 'Todos os Itens' },
   { id: 'hamburguer', name: 'Hambúrguer (Tradicional)' },
   { id: 'hamburguer_caseiro', name: 'Hambúrguer Caseiro 150g' },
   { id: 'frango', name: 'Frango' },
@@ -41,7 +40,8 @@ export const CATEGORIES_LIST: { id: CategoryId; name: string }[] = [
   { id: 'porcoes', name: 'Porções & Petiscos' },
   { id: 'bebidas', name: 'Bebidas' },
   { id: 'sobremesas', name: 'Sobremesas' },
-  { id: 'combos', name: 'Combos & Promoções' }
+  { id: 'combos', name: 'Combos & Promoções' },
+  { id: 'todos', name: 'Todos os Itens' }
 ];
 
 export const AdminMenuManager: React.FC<AdminMenuManagerProps> = ({

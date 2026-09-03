@@ -1,5 +1,4 @@
 export type CategoryId =
-  | 'todos'
   | 'hamburguer'
   | 'hamburguer_caseiro'
   | 'frango'
@@ -11,7 +10,8 @@ export type CategoryId =
   | 'porcoes'
   | 'bebidas'
   | 'sobremesas'
-  | 'combos';
+  | 'combos'
+  | 'todos';
 
 export interface ExtraOption {
   id: string;

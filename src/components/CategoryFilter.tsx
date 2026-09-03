@@ -18,7 +18,6 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   counts
 }) => {
   const categories: { id: CategoryId; label: string; icon: string; badgeText?: string }[] = [
-    { id: 'todos', label: 'Todos os Itens', icon: '🍽️' },
     { id: 'hamburguer', label: 'Hambúrguer', icon: '🍔' },
     { id: 'hamburguer_caseiro', label: 'Caseiro 150g', icon: '🥩' },
     { id: 'frango', label: 'Frango', icon: '🍗' },
@@ -27,10 +26,11 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
     { id: 'file', label: 'Filé', icon: '🥩' },
     { id: 'hot_dog', label: 'Hot Dog', icon: '🌭' },
     { id: 'diversos', label: 'Diversos', icon: '🥪' },
-    { id: 'bebidas', label: 'Bebidas', icon: '🥤' },
     { id: 'porcoes', label: 'Porções', icon: '🍟' },
+    { id: 'bebidas', label: 'Bebidas', icon: '🥤' },
     { id: 'sobremesas', label: 'Sobremesas', icon: '🍰' },
-    { id: 'combos', label: 'Combos & Ofertas', icon: '⚡' }
+    { id: 'combos', label: 'Combos & Ofertas', icon: '⚡' },
+    { id: 'todos', label: 'Todos os Itens', icon: '🍽️' }
   ];
 
   return (
