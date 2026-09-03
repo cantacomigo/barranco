@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StoreSettings } from '../../types';
-import { NeighborhoodFee } from '../../data/neighborhoods';
-import { Truck, Plus, Trash2, Edit2, DollarSign, Clock, MapPin, Check, Save } from 'lucide-react';
+import { NeighborhoodFee, NEIGHBORHOODS } from '../../data/neighborhoods';
+import { Truck, Plus, Trash2, Edit2, DollarSign, Clock, MapPin, Check, Save, Search, RotateCcw, Sparkles } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
 import { ConfirmModal } from '../ConfirmModal';
 
@@ -26,14 +26,16 @@ export const AdminDeliveryManager: React.FC<AdminDeliveryManagerProps> = ({
 
   const [newNeighborhood, setNewNeighborhood] = useState<NeighborhoodFee>({
     name: '',
-    fee: 7.00,
+    fee: 4.50,
     estimatedMinutes: '30-45 min'
   });
 
+  const [searchTerm, setSearchTerm] = useState('');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingItem, setEditingItem] = useState<NeighborhoodFee | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [neighborhoodToDelete, setNeighborhoodToDelete] = useState<number | null>(null);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
 
   const handleSaveGeneralSettings = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +53,7 @@ export const AdminDeliveryManager: React.FC<AdminDeliveryManagerProps> = ({
     e.preventDefault();
     if (!newNeighborhood.name.trim()) return;
     onUpdateNeighborhoods([...neighborhoods, { ...newNeighborhood, name: newNeighborhood.name.trim() }]);
-    setNewNeighborhood({ name: '', fee: 7.00, estimatedMinutes: '30-45 min' });
+    setNewNeighborhood({ name: '', fee: 4.50, estimatedMinutes: '30-45 min' });
   };
 
   const handleDeleteNeighborhood = (index: number) => {
@@ -80,6 +82,17 @@ export const AdminDeliveryManager: React.FC<AdminDeliveryManagerProps> = ({
       setEditingItem(null);
     }
   };
+
+  const handleRestoreDefaultNeighborhoods = () => {
+    onUpdateNeighborhoods(NEIGHBORHOODS);
+    setShowRestoreModal(false);
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 2500);
+  };
+
+  const filteredNeighborhoods = neighborhoods.filter((n) =>
+    n.name.toLowerCase().includes(searchTerm.toLowerCase().trim())
+  );
 
   return (
     <div className="space-y-6">
@@ -167,10 +180,47 @@ export const AdminDeliveryManager: React.FC<AdminDeliveryManagerProps> = ({
 
       {/* Neighborhoods List & Management */}
       <div className="bg-zinc-950/70 border border-zinc-800 rounded-2xl p-4 sm:p-5 space-y-4">
-        <h3 className="text-base font-black text-white flex items-center gap-2">
-          <MapPin className="w-5 h-5 text-red-400" />
-          <span>Tabela de Bairros & Taxas de Entrega</span>
-        </h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-zinc-800/80">
+          <div>
+            <h3 className="text-base font-black text-white flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-red-400" />
+              <span>Tabela de Bairros & Taxas de Entrega</span>
+            </h3>
+            <p className="text-xs text-zinc-400 mt-0.5">
+              {neighborhoods.length} bairros cadastrados para entrega em Olímpia/SP e distritos (Fonte: Naturalis Gourmet).
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowRestoreModal(true)}
+            className="self-start sm:self-auto text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white px-3 py-1.5 rounded-xl border border-zinc-700 flex items-center gap-1.5 transition cursor-pointer"
+            title="Recarregar tabela oficial de bairros e taxas de Olímpia"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+            <span>Restaurar 86 Bairros (Naturalis)</span>
+          </button>
+        </div>
+
+        {/* Search Bar & Filter */}
+        <div className="relative">
+          <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Buscar bairro na lista (ex: Cohab, Centro, Jardim, Vila, Baguaçu)..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-9 pr-4 py-2 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-white"
+            >
+              Limpar
+            </button>
+          )}
+        </div>
 
         {/* Add New Neighborhood Form */}
         <form
@@ -178,11 +228,11 @@ export const AdminDeliveryManager: React.FC<AdminDeliveryManagerProps> = ({
           className="bg-zinc-900/80 border border-zinc-800 p-3 rounded-xl grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end"
         >
           <div className="sm:col-span-5 space-y-1">
-            <label className="text-[11px] font-bold text-zinc-400">Nome da Região / Bairro</label>
+            <label className="text-[11px] font-bold text-zinc-400">Novo Bairro / Região</label>
             <input
               type="text"
               required
-              placeholder="Ex: Santana / Zona Norte"
+              placeholder="Ex: Novo Bairro ou Condomínio"
               value={newNeighborhood.name}
               onChange={(e) => setNewNeighborhood({ ...newNeighborhood, name: e.target.value })}
               className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
@@ -225,83 +275,118 @@ export const AdminDeliveryManager: React.FC<AdminDeliveryManagerProps> = ({
         </form>
 
         {/* Neighborhoods Table */}
-        <div className="divide-y divide-zinc-800 border border-zinc-800 rounded-xl overflow-hidden bg-zinc-900/50">
-          {neighborhoods.map((n, idx) => (
-            <div key={idx} className="p-3 flex items-center justify-between gap-3 text-xs">
-              {editingIndex === idx && editingItem ? (
-                <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
-                  <input
-                    type="text"
-                    value={editingItem.name}
-                    onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
-                    className="sm:col-span-5 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-white"
-                  />
-                  <input
-                    type="number"
-                    step="0.50"
-                    value={editingItem.fee}
-                    onChange={(e) => setEditingItem({ ...editingItem, fee: parseFloat(e.target.value) || 0 })}
-                    className="sm:col-span-3 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-white font-bold"
-                  />
-                  <input
-                    type="text"
-                    value={editingItem.estimatedMinutes}
-                    onChange={(e) => setEditingItem({ ...editingItem, estimatedMinutes: e.target.value })}
-                    className="sm:col-span-2 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-white"
-                  />
-                  <div className="sm:col-span-2 flex gap-1">
-                    <button
-                      type="button"
-                      onClick={handleSaveEdit}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded font-bold"
-                    >
-                      ✓
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingIndex(null)}
-                      className="bg-zinc-700 text-zinc-300 px-2 py-1 rounded"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="font-bold text-white truncate">{n.name}</span>
-                    <span className="text-[11px] text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded-full">
-                      {n.estimatedMinutes}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="font-mono font-black text-amber-400 text-sm">
-                      {formatCurrency(n.fee)}
-                    </span>
-
-                    <button
-                      onClick={() => handleStartEdit(idx)}
-                      className="p-1 text-zinc-400 hover:text-white transition"
-                      title="Editar"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-
-                    <button
-                      onClick={() => handleDeleteNeighborhood(idx)}
-                      className="p-1 text-zinc-400 hover:text-red-400 transition"
-                      title="Excluir"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </>
-              )}
+        <div className="divide-y divide-zinc-800 border border-zinc-800 rounded-xl overflow-hidden bg-zinc-900/50 max-h-[500px] overflow-y-auto">
+          {filteredNeighborhoods.length === 0 ? (
+            <div className="p-6 text-center text-zinc-400 text-xs">
+              Nenhum bairro encontrado para a busca &quot;{searchTerm}&quot;.
             </div>
-          ))}
+          ) : (
+            filteredNeighborhoods.map((n) => {
+              const originalIdx = neighborhoods.findIndex((item) => item.name === n.name);
+              const isEditing = editingIndex === originalIdx;
+
+              return (
+                <div key={n.name} className="p-3 flex items-center justify-between gap-3 text-xs hover:bg-zinc-800/30 transition">
+                  {isEditing && editingItem ? (
+                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                      <input
+                        type="text"
+                        value={editingItem.name}
+                        onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
+                        className="sm:col-span-5 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-white"
+                      />
+                      <input
+                        type="number"
+                        step="0.50"
+                        value={editingItem.fee}
+                        onChange={(e) => setEditingItem({ ...editingItem, fee: parseFloat(e.target.value) || 0 })}
+                        className="sm:col-span-3 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-white font-bold"
+                      />
+                      <input
+                        type="text"
+                        value={editingItem.estimatedMinutes}
+                        onChange={(e) => setEditingItem({ ...editingItem, estimatedMinutes: e.target.value })}
+                        className="sm:col-span-2 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-white"
+                      />
+                      <div className="sm:col-span-2 flex gap-1">
+                        <button
+                          type="button"
+                          onClick={handleSaveEdit}
+                          className="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded font-bold"
+                          title="Salvar alterações"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingIndex(null);
+                            setEditingItem(null);
+                          }}
+                          className="bg-zinc-700 text-zinc-300 px-2 py-1 rounded"
+                          title="Cancelar"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="font-bold text-white truncate">{n.name}</span>
+                        <span className="text-[11px] text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded-full shrink-0">
+                          {n.estimatedMinutes}
+                        </span>
+                        {n.notes && (
+                          <span className="text-[10px] text-zinc-400 truncate hidden md:inline">
+                            ({n.notes})
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="font-mono font-black text-amber-400 text-sm">
+                          {formatCurrency(n.fee)}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => handleStartEdit(originalIdx)}
+                          className="p-1 text-zinc-400 hover:text-white transition cursor-pointer"
+                          title="Editar"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteNeighborhood(originalIdx)}
+                          className="p-1 text-zinc-400 hover:text-red-400 transition cursor-pointer"
+                          title="Excluir"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
+
+      {/* Restore Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showRestoreModal}
+        title="Restaurar Tabela de Bairros de Olímpia"
+        message="Tem certeza que deseja recarregar a tabela completa de 86 bairros de Olímpia/SP e seus respectivos valores de frete (fonte: Naturalis Gourmet)? Quaisquer alterações personalizadas serão substituídas pela tabela padrão."
+        confirmLabel="Sim, Restaurar 86 Bairros"
+        cancelLabel="Cancelar"
+        variant="info"
+        onConfirm={handleRestoreDefaultNeighborhoods}
+        onClose={() => setShowRestoreModal(false)}
+      />
 
       {/* Neighborhood Delete Confirm Modal */}
       <ConfirmModal

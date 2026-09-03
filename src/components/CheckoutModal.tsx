@@ -79,7 +79,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [neighborhood, setNeighborhood] = useState(selectedNeighborhood);
   const [complement, setComplement] = useState('');
   const [reference, setReference] = useState('');
-  const [city, setCity] = useState('São Paulo - SP');
+  const [city, setCity] = useState('Olímpia - SP');
 
   // Payment Selection state
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('pix');
@@ -435,7 +435,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       >
                         {neighborhoods.map((nh) => (
                           <option key={nh.name} value={nh.name}>
-                            {nh.name}
+                            {nh.name} (Taxa: {formatCurrency(nh.fee)})
                           </option>
                         ))}
                       </select>

@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { StoreSettings, MenuItem, Order, OrderStatus, FlavorOption } from '../types';
-import { NeighborhoodFee, Coupon } from '../data/neighborhoods';
+import { NeighborhoodFee, Coupon, NEIGHBORHOODS } from '../data/neighborhoods';
 
 // =================== STORE SETTINGS ===================
 
@@ -196,6 +196,18 @@ export function subscribeToNeighborhoods(
       if (snapshot.exists()) {
         const data = snapshot.data();
         if (data && Array.isArray(data.items)) {
+          const hasOldData = data.items.some(
+            (n: any) =>
+              n.name &&
+              (n.name.includes('Bela Vista') ||
+                n.name.includes('Pinheiros') ||
+                n.name.includes('Cerqueira César'))
+          );
+          if (hasOldData) {
+            saveNeighborhoodsToFirebase(NEIGHBORHOODS).catch(() => {});
+            onUpdate(NEIGHBORHOODS);
+            return;
+          }
           onUpdate(data.items);
         }
       }
@@ -314,6 +326,20 @@ export async function seedInitialFirestoreData(
     const nhDoc = await getDoc(doc(db, 'neighborhoods', 'list'));
     if (!nhDoc.exists()) {
       await setDoc(doc(db, 'neighborhoods', 'list'), { items: defaultNeighborhoods });
+    } else {
+      const nhData = nhDoc.data();
+      if (nhData && Array.isArray(nhData.items)) {
+        const hasOldData = nhData.items.some(
+          (n: any) =>
+            n.name &&
+            (n.name.includes('Bela Vista') ||
+              n.name.includes('Pinheiros') ||
+              n.name.includes('Cerqueira César'))
+        );
+        if (hasOldData) {
+          await setDoc(doc(db, 'neighborhoods', 'list'), { items: defaultNeighborhoods });
+        }
+      }
     }
 
     // 4. Coupons

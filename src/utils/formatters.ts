@@ -104,7 +104,7 @@ export function generateWhatsappOrderMessage(order: Order, storeName: string): s
     addressBlock = `📍 *ENDEREÇO DE ENTREGA:*
 Rua: ${order.customer.address.street}, Nº ${order.customer.address.number}
 Bairro: ${order.customer.address.neighborhood}
-${order.customer.address.complement ? `Complemento: ${order.customer.address.complement}\n` : ''}${order.customer.address.reference ? `Ref: ${order.customer.address.reference}\n` : ''}Cidade: ${order.customer.address.city || 'São Paulo - SP'}`;
+${order.customer.address.complement ? `Complemento: ${order.customer.address.complement}\n` : ''}${order.customer.address.reference ? `Ref: ${order.customer.address.reference}\n` : ''}Cidade: ${order.customer.address.city || 'Olímpia - SP'}`;
   } else {
     addressBlock = `🏬 *MODALIDADE:* Retirada no Balcão do Restaurante`;
   }

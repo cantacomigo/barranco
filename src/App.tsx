@@ -144,7 +144,16 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const hasOldData = parsed.some(
+            (n: any) =>
+              n.name &&
+              (n.name.includes('Bela Vista') ||
+                n.name.includes('Pinheiros') ||
+                n.name.includes('Cerqueira César'))
+          );
+          if (!hasOldData) return parsed;
+        }
       } catch (e) {
         return NEIGHBORHOODS;
       }

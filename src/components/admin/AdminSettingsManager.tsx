@@ -99,8 +99,8 @@ export const AdminSettingsManager: React.FC<AdminSettingsManagerProps> = ({
           address: {
             street: 'Rua do Teste de Impressão',
             number: '123',
-            neighborhood: 'Bela Vista',
-            city: 'São Paulo - SP',
+            neighborhood: 'Centro',
+            city: 'Olímpia - SP',
             reference: 'Teste da bobina térmica'
           }
         },
