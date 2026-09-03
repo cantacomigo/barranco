@@ -32,6 +32,7 @@ import { AdminDeliveryManager } from './admin/AdminDeliveryManager';
 import { AdminCouponsManager } from './admin/AdminCouponsManager';
 import { AdminSettingsManager } from './admin/AdminSettingsManager';
 import { BARRANCO_LOGO_URL } from '../assets/logo';
+import { getStoreScheduleStatus } from '../utils/storeSchedule';
 
 interface AdminPanelModalProps {
   isOpen: boolean;
@@ -349,15 +350,20 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                 <h2 className="font-black text-base sm:text-lg text-white">
                   Painel de Gestão do Restaurante
                 </h2>
-                <span
-                  className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                    storeSettings.isOpen
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                  }`}
-                >
-                  {storeSettings.isOpen ? 'Loja Aberta' : 'Loja Fechada'}
-                </span>
+                {(() => {
+                  const scheduleStatus = getStoreScheduleStatus(storeSettings);
+                  return (
+                    <span
+                      className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                        scheduleStatus.isOpen
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                      }`}
+                    >
+                      {scheduleStatus.isOpen ? 'Loja Aberta' : 'Loja Fechada'}
+                    </span>
+                  );
+                })()}
                 <span
                   className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${
                     isFirebaseConnected

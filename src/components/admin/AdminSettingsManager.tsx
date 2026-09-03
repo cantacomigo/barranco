@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StoreSettings, Order } from '../../types';
+import { StoreSettings, Order, StoreOperatingMode } from '../../types';
 import {
   Store,
   Phone,
@@ -19,10 +19,13 @@ import {
   ShieldCheck,
   KeyRound,
   Eye,
-  EyeOff
+  EyeOff,
+  AlertTriangle,
+  Calendar
 } from 'lucide-react';
 import { triggerThermalPrint } from '../../utils/thermalPrinter';
 import { BARRANCO_LOGO_URL } from '../../assets/logo';
+import { getStoreScheduleStatus } from '../../utils/storeSchedule';
 
 
 interface AdminSettingsManagerProps {
@@ -36,9 +39,18 @@ export const AdminSettingsManager: React.FC<AdminSettingsManagerProps> = ({
   onUpdateStoreSettings,
   recentOrders
 }) => {
-  const [formData, setFormData] = useState<StoreSettings>({ ...storeSettings });
+  const [formData, setFormData] = useState<StoreSettings>({
+    ...storeSettings,
+    operatingMode: storeSettings.operatingMode || 'auto',
+    scheduleOpenTime: storeSettings.scheduleOpenTime || '18:00',
+    scheduleCloseTime: storeSettings.scheduleCloseTime || '23:59',
+    openingHours: storeSettings.openingHours || 'Segunda a Domingo: 18h às 23h59',
+    scheduleDays: storeSettings.scheduleDays || [0, 1, 2, 3, 4, 5, 6]
+  });
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [showAdminPin, setShowAdminPin] = useState(false);
+
+  const scheduleStatus = getStoreScheduleStatus(formData);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,12 +59,29 @@ export const AdminSettingsManager: React.FC<AdminSettingsManagerProps> = ({
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
-  const handleToggleStoreOpen = () => {
-    const updated = { ...formData, isOpen: !formData.isOpen };
+  const handleSetMode = (mode: StoreOperatingMode) => {
+    let newIsOpen = formData.isOpen;
+    if (mode === 'always_open') newIsOpen = true;
+    if (mode === 'always_closed') newIsOpen = false;
+    if (mode === 'auto') {
+      const calculated = getStoreScheduleStatus({ ...formData, operatingMode: 'auto' });
+      newIsOpen = calculated.isOpen;
+    }
+
+    const updated = {
+      ...formData,
+      operatingMode: mode,
+      isOpen: newIsOpen
+    };
     setFormData(updated);
     onUpdateStoreSettings(updated);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
+  };
+
+  const handleToggleStoreOpen = () => {
+    const nextMode: StoreOperatingMode = formData.isOpen ? 'always_closed' : 'always_open';
+    handleSetMode(nextMode);
   };
 
   const handleTestPrint = () => {
@@ -118,56 +147,110 @@ export const AdminSettingsManager: React.FC<AdminSettingsManagerProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Store Status Toggle Banner */}
-      <div
-        className={`p-4 sm:p-5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-          formData.isOpen
-            ? 'bg-emerald-950/40 border-emerald-500/50 shadow-lg shadow-emerald-950/20'
-            : 'bg-red-950/40 border-red-500/50 shadow-lg shadow-red-950/20'
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black ${
-              formData.isOpen
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                : 'bg-red-500/20 text-red-400 border border-red-500/30'
-            }`}
-          >
-            <Power className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-black text-lg text-white">
-                Restaurante: {formData.isOpen ? 'ABERTO PARA PEDIDOS' : 'FECHADO NO MOMENTO'}
-              </h3>
-              <span
-                className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                  formData.isOpen ? 'bg-emerald-500 text-zinc-950' : 'bg-red-500 text-white'
-                }`}
-              >
-                {formData.isOpen ? 'Online' : 'Pausado'}
-              </span>
+      {/* Store Status Toggle Banner & Operating Mode */}
+      <div className="bg-zinc-950/80 border border-zinc-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-zinc-800/80">
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black shrink-0 ${
+                scheduleStatus.isOpen
+                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                  : 'bg-red-500/20 text-red-400 border border-red-500/30'
+              }`}
+            >
+              <Power className="w-6 h-6" />
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              {formData.isOpen
-                ? 'Clientes podem navegar e enviar novos pedidos normalmente.'
-                : 'O cardápio exibirá aviso de restaurante fechado no momento.'}
-            </p>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-black text-lg text-white">
+                  Status Atual: {scheduleStatus.isOpen ? 'ABERTO PARA PEDIDOS' : 'FECHADO NO MOMENTO'}
+                </h3>
+                <span
+                  className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                    scheduleStatus.isOpen ? 'bg-emerald-500 text-zinc-950' : 'bg-red-500 text-white'
+                  }`}
+                >
+                  {scheduleStatus.isOpen ? 'Online' : 'Fechado'}
+                </span>
+                <span className="text-[10px] bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-full font-mono">
+                  {formData.operatingMode === 'auto'
+                    ? 'Modo Automático'
+                    : formData.operatingMode === 'always_open'
+                    ? 'Forçado Aberto'
+                    : 'Forçado Fechado'}
+                </span>
+              </div>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                {scheduleStatus.statusSubtext} • {scheduleStatus.nextOpenTimeMessage}
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Mode Controls */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => handleSetMode('auto')}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
+                formData.operatingMode === 'auto'
+                  ? 'bg-amber-500 text-zinc-950 border-amber-400 shadow-md shadow-amber-500/20'
+                  : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-700'
+              }`}
+              title="Abre às 18:00 e fecha às 23:59 automaticamente todos os dias"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>Automático (18h às 23h59)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSetMode('always_open')}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
+                formData.operatingMode === 'always_open'
+                  ? 'bg-emerald-500 text-zinc-950 border-emerald-400 shadow-md shadow-emerald-500/20'
+                  : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-700'
+              }`}
+              title="Forçar loja aberta para pedidos imediatamente"
+            >
+              <Power className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Forçar Aberto</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSetMode('always_closed')}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
+                formData.operatingMode === 'always_closed'
+                  ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-500/20'
+                  : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-700'
+              }`}
+              title="Fechar restaurante agora imediatamente"
+            >
+              <Power className="w-3.5 h-3.5 text-red-400" />
+              <span>Forçar Fechado</span>
+            </button>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={handleToggleStoreOpen}
-          className={`px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm transition cursor-pointer shadow active:scale-95 whitespace-nowrap self-start sm:self-auto ${
-            formData.isOpen
-              ? 'bg-red-600 hover:bg-red-700 text-white'
-              : 'bg-emerald-600 hover:bg-emerald-500 text-white'
-          }`}
-        >
-          {formData.isOpen ? 'Fechar Restaurante Agora' : 'Abrir Restaurante Agora'}
-        </button>
+        {/* Live explanation pill */}
+        <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 text-xs flex items-start gap-2.5">
+          <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="text-zinc-300 leading-relaxed">
+            <span className="font-semibold text-white">Relógio Atual: {scheduleStatus.currentTimeFormatted}</span> ({scheduleStatus.currentDayName}).
+            {formData.operatingMode === 'auto' ? (
+              <span>
+                {' '}O horário programado é das <strong className="text-amber-300">{formData.scheduleOpenTime || '18:00'}</strong> às <strong className="text-amber-300">{formData.scheduleCloseTime || '23:59'}</strong>.
+                {scheduleStatus.isOpen ? (
+                  <span className="text-emerald-400 font-medium"> A loja está aberta agora dentro do horário!</span>
+                ) : (
+                  <span className="text-red-400 font-medium"> A loja está fechada agora pois o horário atual está fora do expediente (abre às {formData.scheduleOpenTime || '18:00'}).</span>
+                )}
+              </span>
+            ) : (
+              <span> O restaurante está operando em <strong>modo manual ({formData.operatingMode === 'always_open' ? 'Sempre Aberto' : 'Sempre Fechado'})</strong>.</span>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Basic Store Info */}
@@ -234,15 +317,47 @@ export const AdminSettingsManager: React.FC<AdminSettingsManagerProps> = ({
             />
           </div>
 
+          {/* Configuração de Horários Automáticos */}
+          <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-zinc-900/60 border border-zinc-800">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <span>Hora de Abertura Automática</span>
+              </label>
+              <input
+                type="time"
+                value={formData.scheduleOpenTime || '18:00'}
+                onChange={(e) => setFormData({ ...formData, scheduleOpenTime: e.target.value })}
+                className="w-full bg-zinc-800/80 border border-zinc-700 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500 font-mono"
+              />
+              <p className="text-[11px] text-zinc-500">Ex: 18:00 (O restaurante abre sozinho às 18h)</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <span>Hora de Fechamento Automática</span>
+              </label>
+              <input
+                type="time"
+                value={formData.scheduleCloseTime || '23:59'}
+                onChange={(e) => setFormData({ ...formData, scheduleCloseTime: e.target.value })}
+                className="w-full bg-zinc-800/80 border border-zinc-700 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500 font-mono"
+              />
+              <p className="text-[11px] text-zinc-500">Ex: 23:59 (O restaurante fecha sozinho à meia-noite)</p>
+            </div>
+          </div>
+
           <div className="sm:col-span-2 space-y-1.5">
-            <label className="text-xs font-bold text-zinc-300">Horário de Funcionamento Exibido</label>
+            <label className="text-xs font-bold text-zinc-300">Horário de Funcionamento Exibido no Cardápio</label>
             <input
               type="text"
               value={formData.openingHours}
               onChange={(e) => setFormData({ ...formData, openingHours: e.target.value })}
-              placeholder="Terça a Domingo: 18h às 23h45"
+              placeholder="Segunda a Domingo: 18h às 23h59"
               className="w-full bg-zinc-800/80 border border-zinc-700 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500"
             />
+            <p className="text-[11px] text-zinc-500">Texto amigável exibido para os clientes no topo e no banner</p>
           </div>
 
           <div className="sm:col-span-2 space-y-1.5">

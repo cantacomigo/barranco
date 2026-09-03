@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { CartItem, OrderType, StoreSettings } from '../types';
-import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, Tag, Truck, Store, MapPin, Check, AlertCircle } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, Tag, Truck, Store, MapPin, Check, AlertCircle, Clock } from 'lucide-react';
 import { formatCurrency, formatItemOptionsText } from '../utils/formatters';
 import { NEIGHBORHOODS, VALID_COUPONS, Coupon, NeighborhoodFee } from '../data/neighborhoods';
+import { getStoreScheduleStatus } from '../utils/storeSchedule';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -54,6 +55,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [couponSuccess, setCouponSuccess] = useState('');
 
   if (!isOpen) return null;
+
+  const scheduleStatus = getStoreScheduleStatus(storeSettings);
 
   const handleApplyCoupon = (e: React.FormEvent) => {
     e.preventDefault();
@@ -390,6 +393,19 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <span>
                     Pedido mínimo de <strong>{formatCurrency(storeSettings.minOrderValue)}</strong>. Adicione mais itens para continuar.
                   </span>
+                </div>
+              )}
+
+              {/* Store Closed Schedule Notice */}
+              {!scheduleStatus.isOpen && (
+                <div className="bg-amber-950/40 border border-amber-500/40 rounded-xl p-2.5 text-xs text-amber-200/90 flex items-start gap-2">
+                  <Clock className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+                  <div className="leading-snug">
+                    <p className="font-bold text-amber-300">Restaurante Fechado no Momento</p>
+                    <p className="text-[11px] text-zinc-300 mt-0.5">
+                      Nosso horário de atendimento é das <strong>{storeSettings.scheduleOpenTime || '18:00'}</strong> às <strong>{storeSettings.scheduleCloseTime || '23:59'}</strong> ({scheduleStatus.nextOpenTimeMessage}).
+                    </p>
+                  </div>
                 </div>
               )}
 

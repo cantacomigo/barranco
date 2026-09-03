@@ -3,18 +3,22 @@ import { StoreSettings } from '../types';
 import { MapPin, Clock, MessageSquare, Truck, ShieldCheck, Sparkles, Tag, ChevronRight } from 'lucide-react';
 import { formatCurrency, getWhatsappUrl } from '../utils/formatters';
 import { BARRANCO_LOGO_URL } from '../assets/logo';
+import { getStoreScheduleStatus } from '../utils/storeSchedule';
 
 interface StoreBannerProps {
   storeSettings: StoreSettings;
   onOpenCouponInfo: () => void;
   onOpenFlavorCatalog: () => void;
+  isStoreOpen?: boolean;
 }
 
 export const StoreBanner: React.FC<StoreBannerProps> = ({
   storeSettings,
   onOpenCouponInfo,
   onOpenFlavorCatalog,
+  isStoreOpen
 }) => {
+  const isOpen = isStoreOpen !== undefined ? isStoreOpen : getStoreScheduleStatus(storeSettings).isOpen;
   const whatsappHelpUrl = getWhatsappUrl(
     storeSettings.whatsapp,
     `Olá! Gostaria de tirar uma dúvida sobre o cardápio do ${storeSettings.name}.`
@@ -57,7 +61,7 @@ export const StoreBanner: React.FC<StoreBannerProps> = ({
 
 
             <p className="text-zinc-300 text-sm sm:text-base max-w-2xl leading-relaxed">
-              Hambúrgueres artesanais suculentos, lanches prensados tradicionais, porções crocantes turbinadas e bebidas bem geladas. Monte seu pedido e receba quentinho no conforto da sua casa!
+              Hambúrgueres artesanais suculentos, lanches prensados tradicionais e bebidas bem geladas. Monte seu pedido e receba quentinho no conforto da sua casa!
             </p>
 
             {/* Info Pills */}
@@ -65,6 +69,15 @@ export const StoreBanner: React.FC<StoreBannerProps> = ({
               <div className="flex items-center gap-1.5 bg-zinc-800/80 px-3 py-1.5 rounded-lg border border-zinc-700/60">
                 <Clock className="w-4 h-4 text-amber-400 shrink-0" />
                 <span>{storeSettings.openingHours}</span>
+                <span
+                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded ml-1 border ${
+                    isOpen
+                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                      : 'bg-red-500/20 text-red-400 border-red-500/30'
+                  }`}
+                >
+                  {isOpen ? 'Aberto Agora' : 'Fechado Agora'}
+                </span>
               </div>
 
               <div className="flex items-center gap-1.5 bg-zinc-800/80 px-3 py-1.5 rounded-lg border border-zinc-700/60">

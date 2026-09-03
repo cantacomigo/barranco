@@ -3,6 +3,7 @@ import { ShoppingBag, Flame, Search, Clock, Sparkles, ShieldCheck, HelpCircle, L
 import { StoreSettings } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { BARRANCO_LOGO_URL } from '../assets/logo';
+import { getStoreScheduleStatus, StoreScheduleStatus } from '../utils/storeSchedule';
 
 interface HeaderProps {
   storeSettings: StoreSettings;
@@ -16,6 +17,7 @@ interface HeaderProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   isFirebaseConnected?: boolean;
+  scheduleStatus?: StoreScheduleStatus;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -29,20 +31,46 @@ export const Header: React.FC<HeaderProps> = ({
   activeOrdersCount,
   searchTerm,
   setSearchTerm,
-  isFirebaseConnected = true
+  isFirebaseConnected = true,
+  scheduleStatus
 }) => {
+  const currentStatus = scheduleStatus || getStoreScheduleStatus(storeSettings);
+  const isOpen = currentStatus.isOpen;
+
   return (
     <header className="sticky top-0 z-40 bg-zinc-900/95 backdrop-blur-md border-b border-zinc-800 text-white shadow-xl">
       {/* Top micro bar with status and alerts */}
-      <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 px-4 py-1.5 text-xs text-white font-medium flex items-center justify-between">
+      <div
+        className={`px-4 py-1.5 text-xs text-white font-medium flex items-center justify-between transition-colors ${
+          isOpen
+            ? 'bg-gradient-to-r from-amber-600 via-orange-600 to-red-600'
+            : 'bg-gradient-to-r from-zinc-950 via-zinc-900 to-red-950 border-b border-red-900/40'
+        }`}
+      >
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
             <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+              <span
+                className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                  isOpen ? 'bg-emerald-400' : 'bg-red-400'
+                }`}
+              ></span>
+              <span
+                className={`relative inline-flex rounded-full h-2 w-2 ${
+                  isOpen ? 'bg-emerald-400' : 'bg-red-500'
+                }`}
+              ></span>
             </span>
-            <span className="font-semibold">Atendimento Aberto</span>
-            <span className="hidden sm:inline text-amber-100">| Entrega rápida em 30-45 min</span>
+            <span className="font-semibold">
+              {isOpen ? 'Atendimento Aberto' : 'Atendimento Fechado'}
+            </span>
+            <span
+              className={`hidden sm:inline ${
+                isOpen ? 'text-amber-100' : 'text-zinc-300'
+              }`}
+            >
+              | {isOpen ? 'Entrega rápida em 30-45 min' : currentStatus.nextOpenTimeMessage}
+            </span>
             {isFirebaseConnected && (
               <span className="hidden md:inline-flex items-center gap-1 bg-black/25 text-[10px] text-amber-200 px-2 py-0.5 rounded-full font-mono">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
@@ -88,8 +116,14 @@ export const Header: React.FC<HeaderProps> = ({
                 <h1 className="font-black text-lg sm:text-2xl tracking-tight text-white flex items-center gap-1.5 leading-none">
                   <span>{storeSettings.name}</span>
                 </h1>
-                <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider hidden sm:inline-block">
-                  Aberto
+                <span
+                  className={`text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider hidden sm:inline-block border ${
+                    isOpen
+                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                      : 'bg-red-500/20 text-red-400 border-red-500/30'
+                  }`}
+                >
+                  {isOpen ? 'Aberto' : 'Fechado'}
                 </span>
               </div>
               <p className="text-xs text-zinc-400 hidden sm:block truncate max-w-xs md:max-w-md mt-1">

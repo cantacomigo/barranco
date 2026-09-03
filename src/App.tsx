@@ -38,6 +38,7 @@ import {
 // Components
 import { Header } from './components/Header';
 import { StoreBanner } from './components/StoreBanner';
+import { getStoreScheduleStatus } from './utils/storeSchedule';
 import { CategoryFilter } from './components/CategoryFilter';
 import { ProductCard } from './components/ProductCard';
 import { ProductModal } from './components/ProductModal';
@@ -83,11 +84,25 @@ const sanitizeStoreSettings = (data: Partial<StoreSettings>): StoreSettings => {
     ...INITIAL_STORE_SETTINGS,
     ...data,
     name: !data.name || data.name === 'Sabor & Brasa Lanches' ? 'Barranco Lanches' : data.name,
-    logoUrl: sanitizeLogoUrl(data.logoUrl)
+    logoUrl: sanitizeLogoUrl(data.logoUrl),
+    operatingMode: data.operatingMode || 'auto',
+    scheduleOpenTime: data.scheduleOpenTime || '18:00',
+    scheduleCloseTime: data.scheduleCloseTime || '23:59',
+    openingHours: data.openingHours || 'Segunda a Domingo: 18h às 23h59'
   };
 };
 
 export default function App() {
+  // Current time tracking for real-time automatic opening & closing (30s interval)
+  const [currentDate, setCurrentDate] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDate(new Date());
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
+
   // 1. Store Settings (with localStorage + Firebase synchronization)
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(() => {
     const saved = localStorage.getItem('sabor_brasa_settings');
@@ -101,6 +116,13 @@ export default function App() {
     }
     return INITIAL_STORE_SETTINGS;
   });
+
+  // Calculate live store schedule status based on current time and operating mode
+  const scheduleStatus = useMemo(() => {
+    return getStoreScheduleStatus(storeSettings, currentDate);
+  }, [storeSettings, currentDate]);
+
+  const isStoreOpen = scheduleStatus.isOpen;
 
   // 2. Menu Items (with localStorage + Firebase synchronization)
   const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
@@ -694,6 +716,7 @@ export default function App() {
       {/* Main Header */}
       <Header
         storeSettings={storeSettings}
+        scheduleStatus={scheduleStatus}
         cartCount={cartCount}
         cartTotal={subtotal}
         onOpenCart={() => setIsCartOpen(true)}
@@ -706,8 +729,8 @@ export default function App() {
         isFirebaseConnected={isFirebaseConnected}
       />
 
-      {/* Store Closed Warning Banner if !isOpen */}
-      {!storeSettings.isOpen && (
+      {/* Store Closed Warning Banner if !isStoreOpen */}
+      {!isStoreOpen && (
         <div className="bg-gradient-to-r from-red-950 via-zinc-900 to-red-950 border-b border-red-800/80 px-4 py-3">
           <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
             <div className="flex items-center gap-2.5">
@@ -718,9 +741,11 @@ export default function App() {
                 <p className="text-xs sm:text-sm font-bold text-red-200">
                   {storeSettings.closedMessage || 'No momento estamos fechados para novos pedidos.'}
                 </p>
-                <p className="text-[11px] text-zinc-400 flex items-center gap-1 mt-0.5 justify-center sm:justify-start">
+                <p className="text-[11px] text-zinc-400 flex items-center gap-1.5 mt-0.5 justify-center sm:justify-start">
                   <Clock className="w-3 h-3 text-amber-400" />
-                  <span>Horário de funcionamento: {storeSettings.openingHours}</span>
+                  <span>
+                    Atendimento das {storeSettings.scheduleOpenTime || '18:00'} às {storeSettings.scheduleCloseTime || '23:59'} • <strong className="text-amber-300">{scheduleStatus.nextOpenTimeMessage}</strong>
+                  </span>
                 </p>
               </div>
             </div>
@@ -730,7 +755,7 @@ export default function App() {
               className="bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition border border-zinc-700 cursor-pointer"
             >
               <Settings className="w-3.5 h-3.5" />
-              <span>Acessar Painel / Abrir Restaurante</span>
+              <span>Painel / Configurar Horários</span>
             </button>
           </div>
         </div>
@@ -739,6 +764,7 @@ export default function App() {
       {/* Store Banner / Promo */}
       <StoreBanner
         storeSettings={storeSettings}
+        isStoreOpen={isStoreOpen}
         onOpenCouponInfo={() => setIsCartOpen(true)}
         onOpenFlavorCatalog={() => setIsFlavorCatalogOpen(true)}
       />

@@ -118,6 +118,8 @@ export interface Order {
   whatsappSent: boolean;
 }
 
+export type StoreOperatingMode = 'auto' | 'always_open' | 'always_closed' | 'manual';
+
 export interface StoreSettings {
   name: string;
   tagline: string;
@@ -131,6 +133,10 @@ export interface StoreSettings {
   address: string;
   openingHours: string;
   isOpen: boolean;
+  operatingMode?: StoreOperatingMode; // 'auto' (baseado nos horários) | 'always_open' | 'always_closed'
+  scheduleOpenTime?: string; // ex: '18:00'
+  scheduleCloseTime?: string; // ex: '23:59'
+  scheduleDays?: number[]; // [0, 1, 2, 3, 4, 5, 6] onde 0 = Domingo, 1 = Segunda, etc.
   closedMessage?: string;
   adminPin?: string;
   minOrderValue: number;
