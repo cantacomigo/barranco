@@ -92,9 +92,11 @@
         "minOrder": { "type": "number" },
         "active": { "type": "boolean" },
         "description": { "type": "string" },
-        "timesUsed": { "type": "number" }
+        "timesUsed": { "type": "number" },
+        "expiresAt": { "type": "string" },
+        "maxUses": { "type": "number" }
       },
-      "required": ["id", "code", "type", "value", "active"]
+      "required": ["code", "type", "value"]
     }
   },
   "firestore": {

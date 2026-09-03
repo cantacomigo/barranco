@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StoreSettings } from '../types';
-import { MapPin, Clock, MessageSquare, Truck, ShieldCheck, Sparkles, Tag, ChevronRight } from 'lucide-react';
+import { Coupon } from '../data/neighborhoods';
+import { MapPin, Clock, MessageSquare, Truck, ShieldCheck, Sparkles, Tag, ChevronRight, Copy, Check } from 'lucide-react';
 import { formatCurrency, getWhatsappUrl } from '../utils/formatters';
 import { BARRANCO_LOGO_URL } from '../assets/logo';
 import { getStoreScheduleStatus } from '../utils/storeSchedule';
@@ -10,19 +11,33 @@ interface StoreBannerProps {
   onOpenCouponInfo: () => void;
   onOpenFlavorCatalog: () => void;
   isStoreOpen?: boolean;
+  coupons?: Coupon[];
 }
 
 export const StoreBanner: React.FC<StoreBannerProps> = ({
   storeSettings,
   onOpenCouponInfo,
   onOpenFlavorCatalog,
-  isStoreOpen
+  isStoreOpen,
+  coupons = []
 }) => {
+  const [copied, setCopied] = useState(false);
   const isOpen = isStoreOpen !== undefined ? isStoreOpen : getStoreScheduleStatus(storeSettings).isOpen;
   const whatsappHelpUrl = getWhatsappUrl(
     storeSettings.whatsapp,
     `Olá! Gostaria de tirar uma dúvida sobre o cardápio do ${storeSettings.name}.`
   );
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const featuredCoupon = coupons.find(
+    (c) => c.active !== false && (!c.expiresAt || c.expiresAt >= todayStr)
+  ) || coupons[0];
+
+  const handleCopyCoupon = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="relative overflow-hidden bg-zinc-900 border-b border-zinc-800">
@@ -104,17 +119,44 @@ export const StoreBanner: React.FC<StoreBannerProps> = ({
                 <Tag className="w-3.5 h-3.5" />
                 Cupom Ativo Hoje
               </span>
-              <span className="bg-red-500/20 text-red-300 border border-red-500/30 text-[11px] font-bold px-2 py-0.5 rounded-md">
-                10% OFF
-              </span>
+              {featuredCoupon && (
+                <span className="bg-red-500/20 text-red-300 border border-red-500/30 text-[11px] font-bold px-2 py-0.5 rounded-md">
+                  {featuredCoupon.type === 'percentage' ? `${featuredCoupon.value}% OFF` : `R$ ${featuredCoupon.value} OFF`}
+                </span>
+              )}
             </div>
 
-            <div className="bg-zinc-950/80 border border-dashed border-amber-500/50 rounded-xl p-3 text-center my-2 select-all">
-              <span className="text-xs text-zinc-400 block mb-0.5">Use o cupom no carrinho:</span>
-              <span className="font-mono font-black text-amber-400 text-lg tracking-widest">
-                BEMVINDO10
-              </span>
-            </div>
+            {featuredCoupon ? (
+              <div className="bg-zinc-950/80 border border-dashed border-amber-500/50 rounded-xl p-3 text-center my-2">
+                <span className="text-xs text-zinc-400 block mb-0.5">Use o cupom no carrinho:</span>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="font-mono font-black text-amber-400 text-lg tracking-widest">
+                    {featuredCoupon.code}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyCoupon(featuredCoupon.code)}
+                    className="p-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition cursor-pointer"
+                    title="Copiar código do cupom"
+                  >
+                    {copied ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+                {featuredCoupon.minOrder > 0 && (
+                  <span className="text-[10px] text-zinc-400 block mt-1">
+                    Acima de {formatCurrency(featuredCoupon.minOrder)}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="bg-zinc-950/80 border border-dashed border-zinc-700 rounded-xl p-3 text-center my-2">
+                <span className="text-xs text-zinc-400 block">Peça direto pelo cardápio</span>
+              </div>
+            )}
 
             <div className="space-y-2 text-xs text-zinc-300 mt-3 pt-2 border-t border-zinc-700/50">
               <div className="flex items-center gap-2">

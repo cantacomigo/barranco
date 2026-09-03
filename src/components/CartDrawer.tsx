@@ -66,9 +66,27 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     const clean = couponInput.trim().toUpperCase();
     if (!clean) return;
 
-    const found = VALID_COUPONS.find((c) => c.code === clean);
+    const found = coupons.find((c) => c.code.trim().toUpperCase() === clean);
     if (!found) {
-      setCouponError('Cupom inválido ou expirado.');
+      setCouponError('Cupom não encontrado ou inválido.');
+      return;
+    }
+
+    if (found.active === false) {
+      setCouponError('Este cupom está temporariamente desativado.');
+      return;
+    }
+
+    if (found.expiresAt) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (found.expiresAt < todayStr) {
+        setCouponError(`Este cupom expirou em ${found.expiresAt.split('-').reverse().join('/')}.`);
+        return;
+      }
+    }
+
+    if (found.maxUses && (found.timesUsed || 0) >= found.maxUses) {
+      setCouponError('Este cupom atingiu o limite máximo de utilizações.');
       return;
     }
 

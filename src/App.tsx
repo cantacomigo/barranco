@@ -456,6 +456,20 @@ export default function App() {
     setCartItems([]);
     setAppliedCoupon(null);
 
+    // Increment timesUsed on the used coupon if present
+    if (newOrder.couponCode) {
+      setCoupons((prev) => {
+        const updated = prev.map((c) => {
+          if (c.code.toUpperCase() === newOrder.couponCode?.toUpperCase()) {
+            return { ...c, timesUsed: (c.timesUsed || 0) + 1 };
+          }
+          return c;
+        });
+        saveCouponsToFirebase(updated).catch(() => {});
+        return updated;
+      });
+    }
+
     try {
       await saveOrderToFirebase(newOrder);
     } catch (err) {
@@ -767,6 +781,7 @@ export default function App() {
         isStoreOpen={isStoreOpen}
         onOpenCouponInfo={() => setIsCartOpen(true)}
         onOpenFlavorCatalog={() => setIsFlavorCatalogOpen(true)}
+        coupons={coupons}
       />
 
       {/* Category Tabs & Quick Filter */}

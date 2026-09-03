@@ -23,11 +23,16 @@ export interface Coupon {
   value: number;
   minOrder: number;
   description: string;
+  active?: boolean;
+  expiresAt?: string;
+  maxUses?: number;
+  timesUsed?: number;
+  createdAt?: string;
 }
 
 export const VALID_COUPONS: Coupon[] = [
-  { code: 'BEMVINDO10', type: 'percentage', value: 10, minOrder: 30, description: '10% de desconto na sua compra' },
-  { code: 'BURGER5', type: 'fixed', value: 5, minOrder: 35, description: 'R$ 5,00 OFF em pedidos acima de R$ 35' },
-  { code: 'SEXTOU15', type: 'percentage', value: 15, minOrder: 60, description: '15% de desconto especial em pedidos acima de R$ 60' },
-  { code: 'FRETEFREE', type: 'fixed', value: 8, minOrder: 50, description: 'Desconto equivalente ao frete em pedidos acima de R$ 50' }
+  { code: 'BEMVINDO10', type: 'percentage', value: 10, minOrder: 30, description: '10% de desconto na sua compra', active: true, timesUsed: 8 },
+  { code: 'BURGER5', type: 'fixed', value: 5, minOrder: 35, description: 'R$ 5,00 OFF em pedidos acima de R$ 35', active: true, timesUsed: 14 },
+  { code: 'SEXTOU15', type: 'percentage', value: 15, minOrder: 60, description: '15% de desconto especial em pedidos acima de R$ 60', active: true, timesUsed: 5 },
+  { code: 'FRETEFREE', type: 'fixed', value: 8, minOrder: 50, description: 'Desconto equivalente ao frete em pedidos acima de R$ 50', active: true, timesUsed: 19 }
 ];
