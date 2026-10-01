@@ -71,6 +71,7 @@ const sanitizeLogoUrl = (url?: string): string => {
   if (
     url === '/src/assets/logo.png' ||
     url === '/logo.png' ||
+    url === '/caseiros_larissa_logo.png' ||
     url.includes('caseiros_logo') ||
     url.includes('caseiros_da_larissa_logo') ||
     url.includes('barranco_lanches_logo_') ||
@@ -88,7 +89,12 @@ const sanitizeBannerUrl = (url?: string): string => {
   if (!url || typeof url !== 'string' || !url.trim()) {
     return DEFAULT_BANNER_URL;
   }
-  if (url.includes('placeholder') || url.includes('sabor_brasa')) {
+  if (
+    url === '/caseiros_larissa_banner.jpg' ||
+    url.includes('caseiros_larissa_banner_bg') ||
+    url.includes('placeholder') ||
+    url.includes('sabor_brasa')
+  ) {
     return DEFAULT_BANNER_URL;
   }
   return url;

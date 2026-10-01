@@ -55,65 +55,34 @@ export const StoreBanner: React.FC<StoreBannerProps> = ({
       </div>
 
       <div className="container mx-auto px-4 pt-4 pb-6 sm:pt-6 sm:pb-8 relative z-10 space-y-5">
-        {/* Highlighted Visual Hero Banner */}
+        {/* Full Unobstructed Official Visual Banner */}
         <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-amber-500/30 shadow-2xl bg-zinc-900">
-          <div className="relative w-full h-44 sm:h-64 md:h-72 lg:h-80 overflow-hidden">
-            <img
-              src={activeBannerUrl}
-              alt={`Banner ${storeSettings.name}`}
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = DEFAULT_BANNER_URL;
-              }}
-              className="w-full h-full object-cover object-center transition-transform duration-700 hover:scale-[1.02]"
-            />
-            {/* Measured gradient scrim for legibility while keeping the banner art bright and clear */}
-            <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/35 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/80 via-zinc-950/25 to-transparent" />
+          <img
+            src={activeBannerUrl}
+            alt={`Banner ${storeSettings.name} - Deliciosa Comida Caseira`}
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = DEFAULT_BANNER_URL;
+            }}
+            className="w-full h-auto max-h-[460px] object-contain sm:object-cover object-center block mx-auto"
+          />
 
-            {/* Top Status Badge */}
-            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-2">
+          {/* Top Status Badge */}
+          <div className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 flex items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-extrabold px-3 py-1 sm:py-1.5 rounded-full backdrop-blur-md shadow-lg border ${
+                isOpen
+                  ? 'bg-emerald-950/90 text-emerald-300 border-emerald-400/50'
+                  : 'bg-red-950/90 text-red-300 border-red-400/50'
+              }`}
+            >
               <span
-                className={`inline-flex items-center gap-1.5 text-xs font-extrabold px-3 py-1.5 rounded-full backdrop-blur-md shadow-lg border ${
-                  isOpen
-                    ? 'bg-emerald-950/85 text-emerald-300 border-emerald-400/50'
-                    : 'bg-red-950/85 text-red-300 border-red-400/50'
+                className={`w-2 h-2 rounded-full ${
+                  isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'
                 }`}
-              >
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'
-                  }`}
-                />
-                {isOpen ? 'Aberto Agora' : 'Fechado no Momento'}
-              </span>
-            </div>
-
-            {/* Brand Overlay Lockup Inside Hero Banner */}
-            <div className="absolute bottom-0 inset-x-0 p-4 sm:p-6 flex items-end justify-between gap-4">
-              <div className="flex items-center gap-3.5 sm:gap-5">
-                <div className="w-20 h-20 sm:w-28 sm:h-28 flex items-center justify-center shrink-0">
-                  <img
-                    src={activeLogoUrl}
-                    alt={storeSettings.name}
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = BARRANCO_LOGO_URL;
-                    }}
-                    className="w-full h-full object-contain filter drop-shadow-[0_10px_22px_rgba(0,0,0,0.85)]"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <div className="inline-flex items-center gap-1.5 bg-amber-500/20 backdrop-blur-md border border-amber-400/40 text-amber-200 text-[11px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full">
-                    <Utensils className="w-3 h-3 text-amber-400" />
-                    <span>{storeSettings.tagline || 'Marmitaria & Comida Caseira'}</span>
-                  </div>
-                  <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
-                    {storeSettings.name}
-                  </h2>
-                </div>
-              </div>
-            </div>
+              />
+              {isOpen ? 'Aberto Agora' : 'Fechado no Momento'}
+            </span>
           </div>
         </div>
 
@@ -121,15 +90,31 @@ export const StoreBanner: React.FC<StoreBannerProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
           {/* Main Info */}
           <div className="lg:col-span-8 bg-zinc-900/75 border border-zinc-800/90 rounded-2xl p-4 sm:p-5 flex flex-col justify-between space-y-4 backdrop-blur-sm">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Cardápio Digital & Delivery Rápido</span>
+            <div className="flex items-start sm:items-center gap-3.5 sm:gap-4">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center shrink-0">
+                <img
+                  src={activeLogoUrl}
+                  alt={storeSettings.name}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = BARRANCO_LOGO_URL;
+                  }}
+                  className="w-full h-full object-contain filter drop-shadow-[0_6px_16px_rgba(0,0,0,0.7)]"
+                />
               </div>
-              <p className="text-zinc-200 text-sm sm:text-base leading-relaxed">
-                {storeSettings.bannerSubtitle ||
-                  'Sabor de comida feita em casa, preparada todos os dias com ingredientes fresquinhos e aquele tempero especial da Larissa. Monte seu pedido e receba quentinho no conforto da sua casa!'}
-              </p>
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 text-amber-400 text-xs font-bold uppercase tracking-wider">
+                  <Utensils className="w-3.5 h-3.5" />
+                  <span>{storeSettings.tagline || 'Marmitaria / Comida Caseira'}</span>
+                </div>
+                <h2 className="text-xl sm:text-3xl font-black text-white tracking-tight">
+                  {storeSettings.name}
+                </h2>
+                <p className="text-zinc-300 text-xs sm:text-sm leading-relaxed">
+                  {storeSettings.bannerSubtitle ||
+                    'Sabor de comida feita em casa, preparada todos os dias com ingredientes fresquinhos e aquele tempero especial da Larissa. Monte seu pedido e receba quentinho!'}
+                </p>
+              </div>
             </div>
 
             {/* Info Pills */}

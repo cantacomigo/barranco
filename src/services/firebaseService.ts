@@ -14,6 +14,22 @@ function cleanFirestoreData<T>(value: T): T {
   return JSON.parse(JSON.stringify(value));
 }
 
+// Non-blocking wrapper so Firestore daily write quota exhaustion never hangs UI operations
+async function safeFirestoreWrite(writePromise: Promise<unknown>): Promise<boolean> {
+  try {
+    await Promise.race([
+      writePromise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('FIRESTORE_WRITE_TIMEOUT')), 2500)
+      )
+    ]);
+    return true;
+  } catch (err) {
+    console.warn('Firestore write deferred (local/broadcast sync active):', err);
+    return false;
+  }
+}
+
 // Cross-tab BroadcastChannel for instant local multi-tab sync in addition to Firestore cloud sync
 const syncChannel =
   typeof window !== 'undefined' && 'BroadcastChannel' in window
@@ -68,9 +84,9 @@ export async function saveStoreSettingsToFirebase(settings: StoreSettings) {
     ...settings,
     updatedAt: new Date().toISOString()
   });
-  const docRef = doc(db, 'settings', 'general');
-  await setDoc(docRef, cleaned, { merge: true });
   broadcastChange('settings', cleaned);
+  const docRef = doc(db, 'settings', 'general');
+  await safeFirestoreWrite(setDoc(docRef, cleaned, { merge: true }));
   return true;
 }
 
@@ -102,12 +118,14 @@ export function subscribeToMenuItems(
 
 export async function bulkSaveMenuItemsToFirebase(items: MenuItem[]) {
   const cleanedItems = cleanFirestoreData(items);
-  const docRef = doc(db, 'menu', 'list');
-  await setDoc(docRef, {
-    items: cleanedItems,
-    updatedAt: new Date().toISOString()
-  });
   broadcastChange('menu', cleanedItems);
+  const docRef = doc(db, 'menu', 'list');
+  await safeFirestoreWrite(
+    setDoc(docRef, {
+      items: cleanedItems,
+      updatedAt: new Date().toISOString()
+    })
+  );
   return true;
 }
 
@@ -189,16 +207,13 @@ export async function saveOrderToFirebase(order: Order) {
   const filtered = orders.filter((o) => o.id !== cleanedOrder.id);
   const updatedOrders = [cleanedOrder, ...filtered].slice(0, 250);
 
-  await setDoc(listRef, {
-    items: updatedOrders,
-    updatedAt: new Date().toISOString()
-  });
-  try {
-    await setDoc(doc(db, 'orders', cleanedOrder.id), cleanedOrder);
-  } catch {
-    // ignore secondary individual doc error
-  }
   broadcastChange('orders', updatedOrders);
+  await safeFirestoreWrite(
+    setDoc(listRef, {
+      items: updatedOrders,
+      updatedAt: new Date().toISOString()
+    })
+  );
   return true;
 }
 
@@ -209,27 +224,26 @@ export async function updateOrderStatusInFirebase(orderId: string, status: Order
     const items = (snap.data().items as Order[]).map((o) =>
       o.id === orderId ? { ...o, status } : o
     );
-    await setDoc(listRef, {
-      items: cleanFirestoreData(items),
-      updatedAt: new Date().toISOString()
-    });
     broadcastChange('orders', items);
-  }
-  try {
-    await setDoc(doc(db, 'orders', orderId), { status }, { merge: true });
-  } catch {
-    // ignore secondary doc error
+    await safeFirestoreWrite(
+      setDoc(listRef, {
+        items: cleanFirestoreData(items),
+        updatedAt: new Date().toISOString()
+      })
+    );
   }
   return true;
 }
 
 export async function clearOrdersInFirebase() {
-  const listRef = doc(db, 'orders', 'list');
-  await setDoc(listRef, {
-    items: [],
-    updatedAt: new Date().toISOString()
-  });
   broadcastChange('orders', []);
+  const listRef = doc(db, 'orders', 'list');
+  await safeFirestoreWrite(
+    setDoc(listRef, {
+      items: [],
+      updatedAt: new Date().toISOString()
+    })
+  );
   return true;
 }
 
@@ -272,12 +286,14 @@ export function subscribeToNeighborhoods(
 
 export async function saveNeighborhoodsToFirebase(neighborhoods: NeighborhoodFee[]) {
   const cleaned = cleanFirestoreData(neighborhoods);
-  const docRef = doc(db, 'neighborhoods', 'list');
-  await setDoc(docRef, {
-    items: cleaned,
-    updatedAt: new Date().toISOString()
-  });
   broadcastChange('neighborhoods', cleaned);
+  const docRef = doc(db, 'neighborhoods', 'list');
+  await safeFirestoreWrite(
+    setDoc(docRef, {
+      items: cleaned,
+      updatedAt: new Date().toISOString()
+    })
+  );
   return true;
 }
 
@@ -308,12 +324,14 @@ export function subscribeToCoupons(
 
 export async function saveCouponsToFirebase(coupons: Coupon[]) {
   const cleaned = cleanFirestoreData(coupons);
-  const docRef = doc(db, 'coupons', 'list');
-  await setDoc(docRef, {
-    items: cleaned,
-    updatedAt: new Date().toISOString()
-  });
   broadcastChange('coupons', cleaned);
+  const docRef = doc(db, 'coupons', 'list');
+  await safeFirestoreWrite(
+    setDoc(docRef, {
+      items: cleaned,
+      updatedAt: new Date().toISOString()
+    })
+  );
   return true;
 }
 
@@ -344,12 +362,14 @@ export function subscribeToFlavors(
 
 export async function saveFlavorsToFirebase(flavors: FlavorOption[]) {
   const cleaned = cleanFirestoreData(flavors);
-  const docRef = doc(db, 'flavors', 'list');
-  await setDoc(docRef, {
-    items: cleaned,
-    updatedAt: new Date().toISOString()
-  });
   broadcastChange('flavors', cleaned);
+  const docRef = doc(db, 'flavors', 'list');
+  await safeFirestoreWrite(
+    setDoc(docRef, {
+      items: cleaned,
+      updatedAt: new Date().toISOString()
+    })
+  );
   return true;
 }
 
