@@ -264,7 +264,7 @@ export function subscribeToNeighborhoods(
           const hasOldData = data.items.some(
             (n: any) =>
               n.name &&
-              (n.name.includes('Bela Vista') ||
+              (n.name === 'Bela Vista' ||
                 n.name.includes('Pinheiros') ||
                 n.name.includes('Cerqueira César'))
           );
@@ -470,7 +470,7 @@ export async function seedInitialFirestoreData(
         const hasOldData = nhData.items.some(
           (n: any) =>
             n.name &&
-            (n.name.includes('Bela Vista') ||
+            (n.name === 'Bela Vista' ||
               n.name.includes('Pinheiros') ||
               n.name.includes('Cerqueira César'))
         );

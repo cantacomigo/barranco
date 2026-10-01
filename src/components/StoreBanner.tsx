@@ -64,7 +64,7 @@ export const StoreBanner: React.FC<StoreBannerProps> = ({
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src = DEFAULT_BANNER_URL;
             }}
-            className="w-full h-auto max-h-[460px] object-contain sm:object-cover object-center block mx-auto"
+            className="w-full h-auto object-contain object-center block mx-auto"
           />
 
           {/* Top Status Badge */}

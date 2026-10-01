@@ -69,9 +69,8 @@ const sanitizeLogoUrl = (url?: string): string => {
     return BARRANCO_LOGO_URL;
   }
   if (
-    url === '/src/assets/logo.png' ||
-    url === '/logo.png' ||
-    url === '/caseiros_larissa_logo.png' ||
+    url.startsWith('/') ||
+    url.includes('caseiros_larissa') ||
     url.includes('caseiros_logo') ||
     url.includes('caseiros_da_larissa_logo') ||
     url.includes('barranco_lanches_logo_') ||
@@ -90,8 +89,8 @@ const sanitizeBannerUrl = (url?: string): string => {
     return DEFAULT_BANNER_URL;
   }
   if (
-    url === '/caseiros_larissa_banner.jpg' ||
-    url.includes('caseiros_larissa_banner_bg') ||
+    url.startsWith('/') ||
+    url.includes('caseiros_larissa') ||
     url.includes('placeholder') ||
     url.includes('sabor_brasa')
   ) {
@@ -131,7 +130,7 @@ export default function App() {
 
   // 1. Store Settings (with localStorage + Firebase synchronization)
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(() => {
-    const saved = localStorage.getItem('sabor_brasa_settings');
+    const saved = localStorage.getItem('caseiros_larissa_settings_v5');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -143,14 +142,17 @@ export default function App() {
     return INITIAL_STORE_SETTINGS;
   });
 
-  // Sync browser favicon with current logoUrl
+  // Sync browser favicon and document title with current storeSettings
   useEffect(() => {
     const activeLogo = storeSettings.logoUrl || BARRANCO_LOGO_URL;
     const iconLink = document.querySelector("link[rel*='icon']") as HTMLLinkElement | null;
     if (iconLink && activeLogo) {
       iconLink.href = activeLogo;
     }
-  }, [storeSettings.logoUrl]);
+    if (storeSettings.name) {
+      document.title = `${storeSettings.name} - ${storeSettings.tagline || 'Cardápio Digital & Delivery'}`;
+    }
+  }, [storeSettings.logoUrl, storeSettings.name, storeSettings.tagline]);
 
   // Calculate live store schedule status based on current time and operating mode
   const scheduleStatus = useMemo(() => {
@@ -183,7 +185,7 @@ export default function App() {
           const hasOldData = parsed.some(
             (n: any) =>
               n.name &&
-              (n.name.includes('Bela Vista') ||
+              (n.name === 'Bela Vista' ||
                 n.name.includes('Pinheiros') ||
                 n.name.includes('Cerqueira César'))
           );
@@ -424,7 +426,7 @@ export default function App() {
 
   // Persist to local backup cache
   useEffect(() => {
-    localStorage.setItem('sabor_brasa_settings', JSON.stringify(storeSettings));
+    localStorage.setItem('caseiros_larissa_settings_v5', JSON.stringify(storeSettings));
   }, [storeSettings]);
 
   useEffect(() => {
