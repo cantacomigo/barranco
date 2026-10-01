@@ -1,6 +1,7 @@
 {
-  "name": "Barranco Lanches - Cardápio Digital & Delivery",
-  "description": "Cardápio digital oficial do Barranco Lanches com hambúrgueres artesanais na brasa, porções crocantes, bebidas e pedidos rápidos via WhatsApp com PIX e Cartão.",
+  "name": "Caseiros da Larissa - Marmitaria & Comida Caseira",
+  "description": "Cardápio digital oficial do Caseiros da Larissa em Olímpia-SP. Deliciosa comida caseira para o seu almoço, cardápio variado e pedidos rápidos via WhatsApp e PIX.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
+

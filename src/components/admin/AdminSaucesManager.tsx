@@ -548,8 +548,8 @@ export const AdminSaucesManager: React.FC<AdminSaucesManagerProps> = ({
       {/* Reset Confirmation Modal */}
       <ConfirmModal
         isOpen={isResetModalOpen}
-        title="Restaurar Molhos Originais"
-        message="Deseja restaurar a lista de molhos para os sabores originais de fábrica do Barranco Lanches? Quaisquer molhos adicionados manualmente serão redefinidos."
+        title="Restaurar Opções Originais"
+        message="Deseja restaurar a lista de acompanhamentos e molhos para os sabores originais do Caseiros da Larissa? Quaisquer itens adicionados manualmente serão redefinidos."
         confirmLabel="Sim, Restaurar"
         cancelLabel="Cancelar"
         variant="warning"

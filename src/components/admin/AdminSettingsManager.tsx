@@ -737,7 +737,7 @@ export const AdminSettingsManager: React.FC<AdminSettingsManagerProps> = ({
               required
               value={formData.pixReceiverName}
               onChange={(e) => setFormData({ ...formData, pixReceiverName: e.target.value.toUpperCase() })}
-              placeholder="SABOR E BRASA LANCHES"
+              placeholder="CASEIROS DA LARISSA"
               className="w-full bg-zinc-800/80 border border-zinc-700 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white uppercase focus:outline-none focus:border-amber-500"
             />
           </div>

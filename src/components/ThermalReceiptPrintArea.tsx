@@ -223,7 +223,7 @@ export const ThermalReceiptPrintArea: React.FC<ThermalReceiptPrintAreaProps> = (
         <div className="text-center space-y-1 text-[10px] pt-1">
           <div className="font-bold">Tempo estimado: ~{order.estimatedMinutes} min</div>
           <div className="font-black uppercase tracking-wider text-[11px]">Obrigado pela Preferência!</div>
-          <div>Sabor & Brasa - Lanches Artesanais</div>
+          <div>{storeSettings.name} - {storeSettings.tagline || 'Comida Caseira'}</div>
           <div className="border-t border-dotted border-black pt-1 text-[9px] text-zinc-600">
             ----------------- CORTE AQUI (80mm) -----------------
           </div>
