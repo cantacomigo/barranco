@@ -21,7 +21,8 @@ import {
   Eye,
   EyeOff,
   AlertTriangle,
-  Calendar
+  Calendar,
+  Upload
 } from 'lucide-react';
 import { triggerThermalPrint } from '../../utils/thermalPrinter';
 import { BARRANCO_LOGO_URL } from '../../assets/logo';
@@ -49,6 +50,110 @@ export const AdminSettingsManager: React.FC<AdminSettingsManagerProps> = ({
   });
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [showAdminPin, setShowAdminPin] = useState(false);
+  const [removeBgOnUpload, setRemoveBgOnUpload] = useState(true);
+  const [isProcessingLogo, setIsProcessingLogo] = useState(false);
+
+  const handleLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsProcessingLogo(true);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxSize = 420;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxSize) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+
+          if (removeBgOnUpload) {
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+            const cr = data[0];
+            const cg = data[1];
+            const cb = data[2];
+            const ca = data[3];
+
+            if (ca > 200) {
+              const visited = new Uint8Array(width * height);
+              const queue: number[] = [];
+              const tolerance = 42;
+
+              const matchesBg = (idx: number) => {
+                const p = idx * 4;
+                return (
+                  Math.abs(data[p] - cr) <= tolerance &&
+                  Math.abs(data[p + 1] - cg) <= tolerance &&
+                  Math.abs(data[p + 2] - cb) <= tolerance
+                );
+              };
+
+              const pushIfMatch = (x: number, y: number) => {
+                if (x < 0 || x >= width || y < 0 || y >= height) return;
+                const idx = y * width + x;
+                if (!visited[idx] && matchesBg(idx)) {
+                  visited[idx] = 1;
+                  queue.push(idx);
+                }
+              };
+
+              for (let x = 0; x < width; x++) {
+                pushIfMatch(x, 0);
+                pushIfMatch(x, height - 1);
+              }
+              for (let y = 0; y < height; y++) {
+                pushIfMatch(0, y);
+                pushIfMatch(width - 1, y);
+              }
+
+              while (queue.length > 0) {
+                const curr = queue.pop()!;
+                data[curr * 4 + 3] = 0;
+                const cx = curr % width;
+                const cy = Math.floor(curr / width);
+                pushIfMatch(cx + 1, cy);
+                pushIfMatch(cx - 1, cy);
+                pushIfMatch(cx, cy + 1);
+                pushIfMatch(cx, cy - 1);
+              }
+
+              ctx.putImageData(imgData, 0, 0);
+            }
+          }
+
+          const dataUrl = canvas.toDataURL('image/png');
+          const updated = { ...formData, logoUrl: dataUrl };
+          setFormData(updated);
+          onUpdateStoreSettings(updated);
+          setSavedSuccess(true);
+          setTimeout(() => setSavedSuccess(false), 3000);
+        }
+        setIsProcessingLogo(false);
+      };
+      img.onerror = () => setIsProcessingLogo(false);
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => setIsProcessingLogo(false);
+    reader.readAsDataURL(file);
+  };
 
   const scheduleStatus = getStoreScheduleStatus(formData);
 
@@ -372,14 +477,18 @@ export const AdminSettingsManager: React.FC<AdminSettingsManagerProps> = ({
           </div>
 
           <div className="sm:col-span-2 space-y-2 pt-2 border-t border-zinc-800">
-            <label className="text-xs font-bold text-zinc-300 flex items-center justify-between">
+            <label className="text-xs font-bold text-zinc-300 flex items-center justify-between flex-wrap gap-2">
               <span className="flex items-center gap-1.5">
                 <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
-                <span>URL da Logomarca (PNG com Fundo Transparente)</span>
+                <span>Logomarca da Loja (Envio de Imagem ou URL)</span>
               </span>
               <button
                 type="button"
-                onClick={() => setFormData({ ...formData, logoUrl: BARRANCO_LOGO_URL })}
+                onClick={() => {
+                  const updated = { ...formData, logoUrl: BARRANCO_LOGO_URL };
+                  setFormData(updated);
+                  onUpdateStoreSettings(updated);
+                }}
                 className="text-[11px] text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer font-semibold"
               >
                 <RotateCcw className="w-3 h-3" />
@@ -388,7 +497,7 @@ export const AdminSettingsManager: React.FC<AdminSettingsManagerProps> = ({
             </label>
             
             <div className="flex flex-col sm:flex-row items-center gap-4 bg-zinc-900/90 border border-zinc-800 p-3.5 rounded-xl">
-              <div className="w-20 h-20 rounded-xl bg-zinc-950 border border-zinc-700/60 p-1 flex items-center justify-center shrink-0 overflow-hidden">
+              <div className="w-24 h-24 rounded-xl bg-zinc-950 border border-zinc-700/60 p-1.5 flex items-center justify-center shrink-0 overflow-hidden">
                 <img
                   src={formData.logoUrl || BARRANCO_LOGO_URL}
                   alt="Preview Logo"
@@ -399,16 +508,39 @@ export const AdminSettingsManager: React.FC<AdminSettingsManagerProps> = ({
                   className="w-full h-full object-contain filter drop-shadow"
                 />
               </div>
-              <div className="flex-1 w-full space-y-1">
+              <div className="flex-1 w-full space-y-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs px-3.5 py-2 rounded-lg cursor-pointer transition shadow-sm">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{isProcessingLogo ? 'Processando...' : 'Enviar Imagem do Dispositivo'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <label className="inline-flex items-center gap-1.5 text-[11px] text-zinc-300 cursor-pointer select-none bg-zinc-800/80 px-2.5 py-1.5 rounded-lg border border-zinc-700">
+                    <input
+                      type="checkbox"
+                      checked={removeBgOnUpload}
+                      onChange={(e) => setRemoveBgOnUpload(e.target.checked)}
+                      className="rounded accent-amber-500"
+                    />
+                    <span>Remover fundo das bordas automaticamente</span>
+                  </label>
+                </div>
+
                 <input
                   type="text"
                   value={formData.logoUrl || ''}
                   onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
-                  placeholder="Cole aqui o link direto da imagem ou use a logo padrão"
+                  placeholder="Ou cole aqui o link direto da imagem da logo"
                   className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
                 />
                 <p className="text-[11px] text-zinc-400">
-                  A logo oficial do Barranco Lanches possui fundo 100% transparente e se adapta com alto contraste tanto ao cabeçalho quanto aos comprovantes térmicos.
+                  A logo oficial do Caseiros da Larissa possui fundo transparente e se adapta automaticamente ao cabeçalho, banner e comprovantes térmicos.
                 </p>
               </div>
             </div>

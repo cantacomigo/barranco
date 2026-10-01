@@ -67,10 +67,11 @@ const sanitizeLogoUrl = (url?: string): string => {
     return BARRANCO_LOGO_URL;
   }
   if (
+    url === '/src/assets/logo.png' ||
+    url === '/logo.png' ||
     url.includes('barranco_lanches_logo_') ||
     url.includes('barranco_logo_sq_') ||
     url.includes('barranco_logo_transparent_') ||
-    url.includes('/assets/images/') ||
     url.includes('sabor_brasa') ||
     url.includes('placeholder')
   ) {
@@ -83,12 +84,12 @@ const sanitizeStoreSettings = (data: Partial<StoreSettings>): StoreSettings => {
   return {
     ...INITIAL_STORE_SETTINGS,
     ...data,
-    name: !data.name || data.name === 'Sabor & Brasa Lanches' ? 'Barranco Lanches' : data.name,
+    name: !data.name || data.name === 'Sabor & Brasa Lanches' || data.name === 'Barranco Lanches' ? 'CASEIROS DA LARISSA' : data.name,
     logoUrl: sanitizeLogoUrl(data.logoUrl),
     operatingMode: data.operatingMode || 'auto',
-    scheduleOpenTime: data.scheduleOpenTime || '18:00',
-    scheduleCloseTime: data.scheduleCloseTime || '23:59',
-    openingHours: data.openingHours || 'Segunda a Domingo: 18h às 23h59'
+    scheduleOpenTime: data.scheduleOpenTime || '10:00',
+    scheduleCloseTime: data.scheduleCloseTime || '14:00',
+    openingHours: data.openingHours || 'Segunda a Domingo: 10h às 14h'
   };
 };
 
@@ -116,6 +117,15 @@ export default function App() {
     }
     return INITIAL_STORE_SETTINGS;
   });
+
+  // Sync browser favicon with current logoUrl
+  useEffect(() => {
+    const activeLogo = storeSettings.logoUrl || BARRANCO_LOGO_URL;
+    const iconLink = document.querySelector("link[rel*='icon']") as HTMLLinkElement | null;
+    if (iconLink && activeLogo) {
+      iconLink.href = activeLogo;
+    }
+  }, [storeSettings.logoUrl]);
 
   // Calculate live store schedule status based on current time and operating mode
   const scheduleStatus = useMemo(() => {
