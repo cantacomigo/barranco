@@ -95,15 +95,26 @@ export const AdminSettingsManager: React.FC<AdminSettingsManagerProps> = ({
             if (ca > 200) {
               const visited = new Uint8Array(width * height);
               const queue: number[] = [];
-              const tolerance = 42;
+              const tolerance = 38;
 
               const matchesBg = (idx: number) => {
                 const p = idx * 4;
-                return (
-                  Math.abs(data[p] - cr) <= tolerance &&
-                  Math.abs(data[p + 1] - cg) <= tolerance &&
-                  Math.abs(data[p + 2] - cb) <= tolerance
-                );
+                const r = data[p];
+                const g = data[p + 1];
+                const b = data[p + 2];
+                const matchesCorner =
+                  Math.abs(r - cr) <= tolerance &&
+                  Math.abs(g - cg) <= tolerance &&
+                  Math.abs(b - cb) <= tolerance;
+                // Also support fake PNG checkerboard backgrounds (white + neutral light gray squares)
+                const isNeutralCheckerboard =
+                  r >= 195 &&
+                  g >= 195 &&
+                  b >= 195 &&
+                  Math.abs(r - g) <= 8 &&
+                  Math.abs(r - b) <= 10 &&
+                  Math.abs(g - b) <= 8;
+                return matchesCorner || isNeutralCheckerboard;
               };
 
               const pushIfMatch = (x: number, y: number) => {

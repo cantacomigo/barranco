@@ -69,6 +69,8 @@ const sanitizeLogoUrl = (url?: string): string => {
   if (
     url === '/src/assets/logo.png' ||
     url === '/logo.png' ||
+    url.includes('caseiros_logo') ||
+    url.includes('caseiros_da_larissa_logo') ||
     url.includes('barranco_lanches_logo_') ||
     url.includes('barranco_logo_sq_') ||
     url.includes('barranco_logo_transparent_') ||
