@@ -97,12 +97,25 @@
         "maxUses": { "type": "number" }
       },
       "required": ["code", "type", "value"]
+    },
+    "FlavorOption": {
+      "title": "FlavorOption",
+      "description": "Artisanal sauces and flavor options",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "tag": { "type": "string" },
+        "spiceLevel": { "type": "number" }
+      },
+      "required": ["id", "name"]
     }
   },
   "firestore": {
-    "settings/general": {
+    "settings/{settingId}": {
       "schema": "StoreSettings",
-      "description": "Global store configuration"
+      "description": "Global store configuration and synchronized state"
     },
     "menu/{menuId}": {
       "schema": "MenuItem",
@@ -119,6 +132,10 @@
     "coupons/{couponId}": {
       "schema": "Coupon",
       "description": "Coupons collection"
+    },
+    "flavors/{flavorId}": {
+      "schema": "FlavorOption",
+      "description": "Sauces and flavors catalog"
     }
   }
 }

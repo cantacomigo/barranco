@@ -1,7 +1,8 @@
-import logoPng from './caseiros_larissa_logo.png';
+export const BARRANCO_LOGO_URL = '/caseiros_larissa_logo.png';
+export const BARRANCO_LOGO_SQUARE_URL = '/caseiros_larissa_logo.png';
+export const DEFAULT_BANNER_URL = '/caseiros_larissa_banner.jpg';
 
-export const BARRANCO_LOGO_URL = logoPng;
-export const BARRANCO_LOGO_SQUARE_URL = logoPng;
+
 
 
 

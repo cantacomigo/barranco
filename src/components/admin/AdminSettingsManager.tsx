@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StoreSettings, Order, StoreOperatingMode } from '../../types';
 import {
   Store,
@@ -25,7 +25,7 @@ import {
   Upload
 } from 'lucide-react';
 import { triggerThermalPrint } from '../../utils/thermalPrinter';
-import { BARRANCO_LOGO_URL } from '../../assets/logo';
+import { BARRANCO_LOGO_URL, DEFAULT_BANNER_URL } from '../../assets/logo';
 import { getStoreScheduleStatus } from '../../utils/storeSchedule';
 
 
@@ -52,6 +52,19 @@ export const AdminSettingsManager: React.FC<AdminSettingsManagerProps> = ({
   const [showAdminPin, setShowAdminPin] = useState(false);
   const [removeBgOnUpload, setRemoveBgOnUpload] = useState(true);
   const [isProcessingLogo, setIsProcessingLogo] = useState(false);
+  const [isProcessingBanner, setIsProcessingBanner] = useState(false);
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      ...storeSettings,
+      operatingMode: storeSettings.operatingMode || 'auto',
+      scheduleOpenTime: storeSettings.scheduleOpenTime || '10:00',
+      scheduleCloseTime: storeSettings.scheduleCloseTime || '14:00',
+      openingHours: storeSettings.openingHours || 'Segunda a Domingo: 10h às 14h',
+      scheduleDays: storeSettings.scheduleDays || [0, 1, 2, 3, 4, 5, 6]
+    }));
+  }, [storeSettings]);
 
   const handleLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -163,6 +176,51 @@ export const AdminSettingsManager: React.FC<AdminSettingsManagerProps> = ({
       img.src = event.target?.result as string;
     };
     reader.onerror = () => setIsProcessingLogo(false);
+    reader.readAsDataURL(file);
+  };
+
+  const handleBannerFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsProcessingBanner(true);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxWidth = 1280;
+        const maxHeight = 720;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.84);
+          const updated = { ...formData, bannerUrl: dataUrl };
+          setFormData(updated);
+          onUpdateStoreSettings(updated);
+          setSavedSuccess(true);
+          setTimeout(() => setSavedSuccess(false), 3000);
+        }
+        setIsProcessingBanner(false);
+      };
+      img.onerror = () => setIsProcessingBanner(false);
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => setIsProcessingBanner(false);
     reader.readAsDataURL(file);
   };
 
@@ -554,6 +612,78 @@ export const AdminSettingsManager: React.FC<AdminSettingsManagerProps> = ({
                   A logo oficial do Caseiros da Larissa possui fundo transparente e se adapta automaticamente ao cabeçalho, banner e comprovantes térmicos.
                 </p>
               </div>
+            </div>
+          </div>
+
+          {/* Banner Principal do Site */}
+          <div className="sm:col-span-2 space-y-2.5 pt-3 border-t border-zinc-800">
+            <label className="text-xs font-bold text-zinc-300 flex items-center justify-between flex-wrap gap-2">
+              <span className="flex items-center gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
+                <span>Banner Principal do Site (Envio de Imagem ou URL)</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const updated = { ...formData, bannerUrl: DEFAULT_BANNER_URL };
+                  setFormData(updated);
+                  onUpdateStoreSettings(updated);
+                }}
+                className="text-[11px] text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer font-semibold"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Restaurar Banner Oficial</span>
+              </button>
+            </label>
+
+            <div className="flex flex-col sm:flex-row items-center gap-4 bg-zinc-900/90 border border-zinc-800 p-3.5 rounded-xl">
+              <div className="w-full sm:w-48 h-28 rounded-xl bg-zinc-950 border border-zinc-700/60 overflow-hidden shrink-0 relative">
+                <img
+                  src={formData.bannerUrl || DEFAULT_BANNER_URL}
+                  alt="Preview Banner"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = DEFAULT_BANNER_URL;
+                  }}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex-1 w-full space-y-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs px-3.5 py-2 rounded-lg cursor-pointer transition shadow-sm">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{isProcessingBanner ? 'Processando...' : 'Enviar Banner do Dispositivo'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleBannerFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                <input
+                  type="text"
+                  value={formData.bannerUrl || ''}
+                  onChange={(e) => setFormData({ ...formData, bannerUrl: e.target.value })}
+                  placeholder="Ou cole aqui o link direto da imagem do banner"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                />
+                <p className="text-[11px] text-zinc-400">
+                  O banner aparece em destaque no topo do cardápio em computadores e celulares e sincroniza automaticamente em todos os aparelhos.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 pt-1">
+              <label className="text-xs font-bold text-zinc-300">Texto de Apresentação no Banner</label>
+              <input
+                type="text"
+                value={formData.bannerSubtitle || ''}
+                onChange={(e) => setFormData({ ...formData, bannerSubtitle: e.target.value })}
+                placeholder="Ex: Sabor de comida feita em casa, preparada todos os dias com ingredientes fresquinhos..."
+                className="w-full bg-zinc-800/80 border border-zinc-700 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500"
+              />
             </div>
           </div>
         </div>

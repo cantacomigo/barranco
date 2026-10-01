@@ -12,7 +12,7 @@ import {
 } from './types';
 import { MENU_ITEMS, INITIAL_STORE_SETTINGS, COMMON_FLAVORS } from './data/menu';
 import { NEIGHBORHOODS, VALID_COUPONS, Coupon, NeighborhoodFee } from './data/neighborhoods';
-import { BARRANCO_LOGO_URL } from './assets/logo';
+import { BARRANCO_LOGO_URL, DEFAULT_BANNER_URL } from './assets/logo';
 
 // Firebase Service
 import {
@@ -32,7 +32,9 @@ import {
   saveCouponsToFirebase,
   subscribeToFlavors,
   saveFlavorsToFirebase,
-  seedInitialFirestoreData
+  seedInitialFirestoreData,
+  fetchAllCloudDataOnce,
+  onLocalBroadcastSync
 } from './services/firebaseService';
 
 // Components
@@ -82,12 +84,27 @@ const sanitizeLogoUrl = (url?: string): string => {
   return url;
 };
 
+const sanitizeBannerUrl = (url?: string): string => {
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    return DEFAULT_BANNER_URL;
+  }
+  if (url.includes('placeholder') || url.includes('sabor_brasa')) {
+    return DEFAULT_BANNER_URL;
+  }
+  return url;
+};
+
 const sanitizeStoreSettings = (data: Partial<StoreSettings>): StoreSettings => {
   return {
     ...INITIAL_STORE_SETTINGS,
     ...data,
     name: !data.name || data.name === 'Sabor & Brasa Lanches' || data.name === 'Barranco Lanches' ? 'CASEIROS DA LARISSA' : data.name,
     logoUrl: sanitizeLogoUrl(data.logoUrl),
+    bannerUrl: sanitizeBannerUrl(data.bannerUrl),
+    bannerSubtitle:
+      data.bannerSubtitle && !data.bannerSubtitle.includes('Hambúrgueres artesanais suculentos')
+        ? data.bannerSubtitle
+        : INITIAL_STORE_SETTINGS.bannerSubtitle,
     operatingMode: data.operatingMode || 'auto',
     scheduleOpenTime: data.scheduleOpenTime || '10:00',
     scheduleCloseTime: data.scheduleCloseTime || '14:00',
@@ -256,10 +273,39 @@ export default function App() {
   // Toast feedback
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // ----------------- FIREBASE REAL-TIME SYNC -----------------
+  // ----------------- FIREBASE REAL-TIME SYNC (DESKTOP & MOBILE) -----------------
   useEffect(() => {
     // 1. Initial Firestore cloud check and seed if collection empty
-    seedInitialFirestoreData(storeSettings, menuItems, neighborhoods, coupons, flavors);
+    seedInitialFirestoreData(storeSettings, menuItems, neighborhoods, coupons, flavors, orders);
+
+    const applyCloudSnapshot = (cloudData: {
+      settings?: StoreSettings;
+      menu?: MenuItem[];
+      orders?: Order[];
+      neighborhoods?: NeighborhoodFee[];
+      coupons?: Coupon[];
+      flavors?: FlavorOption[];
+    }) => {
+      if (cloudData.settings) {
+        setStoreSettings(sanitizeStoreSettings(cloudData.settings));
+      }
+      if (cloudData.menu && cloudData.menu.length > 0) {
+        setMenuItems(cloudData.menu);
+      }
+      if (cloudData.orders) {
+        setOrders(cloudData.orders);
+      }
+      if (cloudData.neighborhoods && cloudData.neighborhoods.length > 0) {
+        setNeighborhoods(cloudData.neighborhoods);
+      }
+      if (cloudData.coupons && cloudData.coupons.length > 0) {
+        setCoupons(cloudData.coupons);
+      }
+      if (cloudData.flavors && cloudData.flavors.length > 0) {
+        setFlavors(cloudData.flavors);
+      }
+      setIsFirebaseConnected(true);
+    };
 
     // 2. Real-time Store Settings subscription
     const unsubSettings = subscribeToStoreSettings(
@@ -324,6 +370,37 @@ export default function App() {
       () => setIsFirebaseConnected(false)
     );
 
+    // 8. Instant local BroadcastChannel sync across tabs
+    const unsubBroadcast = onLocalBroadcastSync(({ type, data }) => {
+      if (type === 'settings' && data) setStoreSettings(sanitizeStoreSettings(data));
+      if (type === 'menu' && Array.isArray(data)) setMenuItems(data);
+      if (type === 'orders' && Array.isArray(data)) setOrders(data);
+      if (type === 'neighborhoods' && Array.isArray(data)) setNeighborhoods(data);
+      if (type === 'coupons' && Array.isArray(data)) setCoupons(data);
+      if (type === 'flavors' && Array.isArray(data)) setFlavors(data);
+    });
+
+    // 9. Automatic wake-up & periodic sync for mobile/desktop browsers
+    const handleWakeUpOrOnline = () => {
+      if (document.visibilityState === 'visible') {
+        fetchAllCloudDataOnce()
+          .then(applyCloudSnapshot)
+          .catch(() => {});
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleWakeUpOrOnline);
+    window.addEventListener('online', handleWakeUpOrOnline);
+    window.addEventListener('focus', handleWakeUpOrOnline);
+
+    const syncInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchAllCloudDataOnce()
+          .then(applyCloudSnapshot)
+          .catch(() => {});
+      }
+    }, 20000);
+
     return () => {
       unsubSettings();
       unsubMenu();
@@ -331,6 +408,11 @@ export default function App() {
       unsubNeighborhoods();
       unsubCoupons();
       unsubFlavors();
+      unsubBroadcast();
+      document.removeEventListener('visibilitychange', handleWakeUpOrOnline);
+      window.removeEventListener('online', handleWakeUpOrOnline);
+      window.removeEventListener('focus', handleWakeUpOrOnline);
+      clearInterval(syncInterval);
     };
   }, []);
 
@@ -538,32 +620,36 @@ export default function App() {
 
   // Menu Management Handlers (Local + Firebase)
   const handleAddItem = async (newItem: MenuItem) => {
-    setMenuItems((prev) => [newItem, ...prev]);
+    const updatedList = [newItem, ...menuItems];
+    setMenuItems(updatedList);
     showToast(`"${newItem.name}" adicionado com sucesso!`);
     try {
-      await saveMenuItemToFirebase(newItem);
+      await saveMenuItemToFirebase(newItem, updatedList);
+      setIsFirebaseConnected(true);
     } catch (err) {
       console.warn('Firebase add item error:', err);
     }
   };
 
   const handleUpdateItem = async (updatedItem: MenuItem) => {
-    setMenuItems((prev) =>
-      prev.map((it) => (it.id === updatedItem.id ? updatedItem : it))
-    );
+    const updatedList = menuItems.map((it) => (it.id === updatedItem.id ? updatedItem : it));
+    setMenuItems(updatedList);
     showToast(`"${updatedItem.name}" atualizado!`);
     try {
-      await saveMenuItemToFirebase(updatedItem);
+      await saveMenuItemToFirebase(updatedItem, updatedList);
+      setIsFirebaseConnected(true);
     } catch (err) {
       console.warn('Firebase update item error:', err);
     }
   };
 
   const handleDeleteItem = async (itemId: string) => {
-    setMenuItems((prev) => prev.filter((it) => it.id !== itemId));
+    const updatedList = menuItems.filter((it) => it.id !== itemId);
+    setMenuItems(updatedList);
     showToast('Item removido do cardápio.');
     try {
-      await deleteMenuItemFromFirebase(itemId);
+      await deleteMenuItemFromFirebase(itemId, updatedList);
+      setIsFirebaseConnected(true);
     } catch (err) {
       console.warn('Firebase delete item error:', err);
     }
@@ -573,11 +659,11 @@ export default function App() {
     const item = menuItems.find((it) => it.id === itemId);
     if (!item) return;
     const updated = { ...item, available: !item.available };
-    setMenuItems((prev) =>
-      prev.map((it) => (it.id === itemId ? updated : it))
-    );
+    const updatedList = menuItems.map((it) => (it.id === itemId ? updated : it));
+    setMenuItems(updatedList);
     try {
-      await saveMenuItemToFirebase(updated);
+      await saveMenuItemToFirebase(updated, updatedList);
+      setIsFirebaseConnected(true);
     } catch (err) {
       console.warn('Firebase toggle item error:', err);
     }
@@ -643,14 +729,18 @@ export default function App() {
 
   // Manual Full Sync to Cloud
   const handleSyncAllToFirebase = async () => {
-    try {
-      await saveStoreSettingsToFirebase(storeSettings);
-      await bulkSaveMenuItemsToFirebase(menuItems);
-      await saveNeighborhoodsToFirebase(neighborhoods);
-      await saveCouponsToFirebase(coupons);
-      await saveFlavorsToFirebase(flavors);
-      showToast('☁️ Todos os dados sincronizados com o Firebase Firestore!');
-    } catch (err) {
+    const results = await Promise.allSettled([
+      saveStoreSettingsToFirebase(storeSettings),
+      bulkSaveMenuItemsToFirebase(menuItems),
+      saveNeighborhoodsToFirebase(neighborhoods),
+      saveCouponsToFirebase(coupons),
+      saveFlavorsToFirebase(flavors)
+    ]);
+    const anySuccess = results.some((r) => r.status === 'fulfilled');
+    if (anySuccess) {
+      setIsFirebaseConnected(true);
+      showToast('☁️ Todos os dados sincronizados com o Firebase em tempo real!');
+    } else {
       showToast('Erro ao sincronizar com o Firebase.');
     }
   };

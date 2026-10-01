@@ -30,5 +30,10 @@ service cloud.firestore {
     match /coupons/{couponId} {
       allow read, write: if true;
     }
+
+    // Flavors & house sauces
+    match /flavors/{flavorId} {
+      allow read, write: if true;
+    }
   }
 }

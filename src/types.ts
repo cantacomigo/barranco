@@ -124,6 +124,8 @@ export interface StoreSettings {
   name: string;
   tagline: string;
   logoUrl?: string;
+  bannerUrl?: string;
+  bannerSubtitle?: string;
   phone: string;
   whatsapp: string; // Format: 5511999999999
   pixKey: string;

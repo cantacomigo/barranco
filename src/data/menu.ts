@@ -1,5 +1,5 @@
 import { MenuItem, FlavorOption, ExtraOption, StoreSettings } from '../types';
-import { BARRANCO_LOGO_URL } from '../assets/logo';
+import { BARRANCO_LOGO_URL, DEFAULT_BANNER_URL } from '../assets/logo';
 
 export const COMMON_FLAVORS: FlavorOption[] = [
   {
@@ -1386,6 +1386,8 @@ export const INITIAL_STORE_SETTINGS: StoreSettings = {
   name: 'CASEIROS DA LARISSA',
   tagline: 'Marmitaria / Comida Caseira',
   logoUrl: BARRANCO_LOGO_URL,
+  bannerUrl: DEFAULT_BANNER_URL,
+  bannerSubtitle: 'Sabor de comida feita em casa, preparada todos os dias com ingredientes fresquinhos e aquele tempero especial da Larissa. Monte seu pedido e receba quentinho!',
   phone: '(17) 98156-0177',
   whatsapp: '5517981560177',
   pixKey: '18441332819',
